@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - Civil Services Transfer System</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <header class="top-nav">
+        <a href="index.html" class="nav-brand">
+            <div class="emblem">CS</div>
+            <span>Civil Services Transfer System</span>
+        </a>
+        <div style="display: flex; gap: 1rem;">
+            <a href="index.html" class="btn btn-outline" style="color: white; border-color: rgba(255,255,255,0.3);">Home</a>
+            <a href="login.html" class="btn btn-primary">Portal Login</a>
+        </div>
+    </header>
+
+    <div class="main-content" style="max-width: 1000px; margin: 2rem auto;">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Project Technical Documentation & Architecture</h1>
+                <p class="page-subtitle">Software Engineering Laboratory Project Overview</p>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 2rem;">
+            <h3 style="color: #0f172a; margin-bottom: 1rem;">1. Executive Summary & Objective</h3>
+            <p style="color: #475569; font-size: 0.95rem; line-height: 1.6;">
+                The <strong>Civil Services Officer Posting & Transfer Optimization System</strong> is a web application designed to systematically manage civil services officer transfer applications, vacancy allocations, document verification, policy compliance, optimization scoring, committee review decisions, and official transfer order generation.
+            </p>
+        </div>
+
+        <div class="card" style="margin-bottom: 2rem;">
+            <h3 style="color: #0f172a; margin-bottom: 1rem;">2. Technology Stack</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr><th style="width: 30%;">Component</th><th>Technology Selection</th></tr>
+                <tr><td><strong>Frontend</strong></td><td>HTML5, Vanilla CSS3 (Custom Government Theme), JavaScript (ES6 FETCH API)</td></tr>
+                <tr><td><strong>Backend Engine</strong></td><td>Java Servlets (<code>javax.servlet.*</code> annotations with 0 <code>web.xml</code>)</td></tr>
+                <tr><td><strong>Database Access</strong></td><td>Raw JDBC with <code>PreparedStatement</code> and MySQL Driver 8.0</td></tr>
+                <tr><td><strong>Application Server</strong></td><td>Apache Tomcat 9.0 Server</td></tr>
+                <tr><td><strong>Database Engine</strong></td><td>MySQL 8.0 Server (<code>civil_services_transfer_system</code>)</td></tr>
+            </table>
+        </div>
+
+        <div class="card" style="margin-bottom: 2rem;">
+            <h3 style="color: #0f172a; margin-bottom: 1rem;">3. Rule-Based Optimization Formula (100 Points)</h3>
+            <div style="background: #f8fafc; padding: 1.25rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <p style="font-weight: 700; color: #1e293b; margin-bottom: 0.5rem;">Score = Eligibility (25) + Service Duration (20) + Location Preference (20) + Vacancy (15) + Admin Priority (10) + Transfer History (10)</p>
+                <ul style="color: #475569; font-size: 0.9rem; margin-left: 1.25rem; line-height: 1.6;">
+                    <li><strong>Eligibility (25 pts)</strong>: Meets active policy minimum service years and verified document status.</li>
+                    <li><strong>Service Duration (20 pts)</strong>: Score scales up to 20 points for 5+ years in current posting.</li>
+                    <li><strong>Location Preference (20 pts)</strong>: Matches officer's preferred location against available vacancies.</li>
+                    <li><strong>Vacancy Availability (15 pts)</strong>: Verified available position count at preferred station.</li>
+                    <li><strong>Administrative Priority (10 pts)</strong>: Priority bonus for medical, spouse co-location, or special hardship cases.</li>
+                    <li><strong>Transfer History (10 pts)</strong>: Seniority bonus for time elapsed since previous transfer.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 style="color: #0f172a; margin-bottom: 1rem;">4. Demo User Accounts for Viva Evaluation</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th>Role</th>
+                        <th>Username</th>
+                        <th>Password</th>
+                        <th>Default Landing Page</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Cadre Administrator</strong></td>
+                        <td><code>admin</code></td>
+                        <td><code>admin123</code></td>
+                        <td><code>/admin/dashboard.html</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Civil Services Officer</strong></td>
+                        <td><code>officer1</code></td>
+                        <td><code>officer123</code></td>
+                        <td><code>/officer/dashboard.html</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Transfer Committee Member</strong></td>
+                        <td><code>committee1</code></td>
+                        <td><code>committee123</code></td>
+                        <td><code>/committee/dashboard.html</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 Civil Services Officer Posting & Transfer Optimization System</p>
+    </footer>
+
+</body>
+</html>

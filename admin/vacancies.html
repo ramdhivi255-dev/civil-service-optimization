@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vacancy Management - Administrator Portal</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+    <header class="top-nav">
+        <a href="dashboard.html" class="nav-brand">
+            <div class="emblem">CS</div>
+            <span>Cadre Administrator Portal</span>
+        </a>
+        <div class="user-menu">
+            <div class="user-info">
+                <div class="user-name" id="nav-user-name">Loading...</div>
+                <div class="user-role-badge" id="nav-user-role">Administrator</div>
+            </div>
+            <button onclick="handleLogout()" class="btn btn-outline btn-sm" style="color: white; border-color: rgba(255,255,255,0.3);">Logout</button>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-heading">Admin Management</div>
+            <ul class="sidebar-menu">
+                <li><a href="dashboard.html">📊 Dashboard</a></li>
+                <li><a href="officers.html">👥 Officers Registry</a></li>
+                <li><a href="vacancies.html" class="active">🏢 Vacancy Management</a></li>
+                <li><a href="policies.html">📜 Transfer Policies</a></li>
+                <li><a href="transfer-requests.html">📑 Transfer Requests</a></li>
+                <li><a href="orders.html">📋 Transfer Orders</a></li>
+                <li><a href="reports.html">📈 Reports & Analytics</a></li>
+                <li><a href="notifications.html">🔔 Notifications</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Cadre Vacancy Ledger</h1>
+                    <p class="page-subtitle">Manage available service positions, district allocations, and post availability</p>
+                </div>
+                <button onclick="openModal('add-vacancy-modal')" class="btn btn-primary">➕ Register New Vacancy</button>
+            </div>
+
+            <div id="vacancy-alert"></div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <h3 class="table-title">Available Service Vacancies</h3>
+                    <div class="table-actions">
+                        <input type="text" id="vacancy-search" class="form-control" placeholder="Search location/district..." style="width: 220px;" onkeyup="loadVacancies()">
+                        <select id="district-filter" class="form-control" style="width: 140px;" onchange="loadVacancies()">
+                            <option value="">All Districts</option>
+                            <option value="Chennai">Chennai</option>
+                            <option value="Coimbatore">Coimbatore</option>
+                            <option value="Madurai">Madurai</option>
+                            <option value="Salem">Salem</option>
+                            <option value="Trichy">Trichy</option>
+                        </select>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Vacancy ID</th>
+                            <th>Location / Station</th>
+                            <th>District</th>
+                            <th>Department</th>
+                            <th>Designation / Cadre</th>
+                            <th>Available Positions</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vacancies-tbody">
+                        <tr><td colspan="8" style="text-align: center; color: #64748b;">Loading vacancies...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Vacancy Modal -->
+    <div class="modal-overlay" id="add-vacancy-modal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 class="modal-title">Create New Vacancy Record</h3>
+                <button class="modal-close" onclick="closeModal('add-vacancy-modal')">&times;</button>
+            </div>
+            <form id="add-vacancy-form" onsubmit="submitAddVacancy(event)">
+                <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="v-location">Location / Office Station *</label>
+                            <input type="text" id="v-location" class="form-control" required placeholder="e.g. Chennai Secretariat">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="v-district">District *</label>
+                            <input type="text" id="v-district" class="form-control" required placeholder="e.g. Chennai">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="v-department">Department *</label>
+                            <input type="text" id="v-department" class="form-control" required placeholder="e.g. Revenue Administration">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="v-designation">Designation *</label>
+                            <input type="text" id="v-designation" class="form-control" required placeholder="e.g. District Collector">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="v-cadre">Cadre</label>
+                            <select id="v-cadre" class="form-control">
+                                <option value="IAS">IAS</option>
+                                <option value="IPS">IPS</option>
+                                <option value="IFS">IFS</option>
+                                <option value="State Civil Service">State Cadre</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="v-positions">Number of Available Positions *</label>
+                            <input type="number" id="v-positions" class="form-control" value="2" min="1" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('add-vacancy-modal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Vacancy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../js/script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = await initSession(['CADRE_ADMINISTRATOR']);
+            if (!user) return;
+            loadVacancies();
+        });
+
+        async function loadVacancies() {
+            const search = document.getElementById('vacancy-search').value.trim();
+            const district = document.getElementById('district-filter').value;
+
+            try {
+                const res = await fetch(API_BASE + `vacancy?search=${encodeURIComponent(search)}&district=${encodeURIComponent(district)}`);
+                const data = await res.json();
+                const tbody = document.getElementById('vacancies-tbody');
+
+                if (data.status === 'success' && data.vacancies.length > 0) {
+                    tbody.innerHTML = '';
+                    data.vacancies.forEach(v => {
+                        const tr = document.createElement('tr');
+                        const isAvail = v.status === 'AVAILABLE';
+                        tr.innerHTML = `
+                            <td>#${v.vacancy_id}</td>
+                            <td><strong>${v.location}</strong></td>
+                            <td>${v.district}</td>
+                            <td>${v.department}</td>
+                            <td>${v.designation} (${v.cadre})</td>
+                            <td><strong style="color: #2563eb; font-size: 1.1rem;">${v.available_positions} Seats</strong></td>
+                            <td>${renderStatusBadge(v.status)}</td>
+                            <td>
+                                <button onclick="toggleVacancyStatus(${v.vacancy_id}, '${isAvail ? 'INACTIVE' : 'AVAILABLE'}')" class="btn ${isAvail ? 'btn-danger' : 'btn-success'} btn-sm">
+                                    ${isAvail ? 'Inactivate' : 'Activate'}
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #64748b;">No vacancy records found.</td></tr>`;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function submitAddVacancy(e) {
+            e.preventDefault();
+            const loc = document.getElementById('v-location').value.trim();
+            const dist = document.getElementById('v-district').value.trim();
+            const dept = document.getElementById('v-department').value.trim();
+            const des = document.getElementById('v-designation').value.trim();
+            const cadre = document.getElementById('v-cadre').value;
+            const pos = document.getElementById('v-positions').value;
+
+            try {
+                const res = await fetch(API_BASE + 'vacancy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `action=add&location=${encodeURIComponent(loc)}&district=${encodeURIComponent(dist)}&department=${encodeURIComponent(dept)}&designation=${encodeURIComponent(des)}&cadre=${encodeURIComponent(cadre)}&available_positions=${encodeURIComponent(pos)}`
+                });
+
+                const data = await res.json();
+                if (data.status === 'success') {
+                    closeModal('add-vacancy-modal');
+                    showAlert('vacancy-alert', 'Vacancy created successfully.', 'success');
+                    loadVacancies();
+                } else {
+                    alert(data.message || 'Failed to add vacancy.');
+                }
+            } catch (err) {
+                alert('Connection error occurred.');
+            }
+        }
+
+        async function toggleVacancyStatus(vId, newStatus) {
+            try {
+                const res = await fetch(API_BASE + 'vacancy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `action=toggle_status&vacancy_id=${vId}&status=${newStatus}`
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    showAlert('vacancy-alert', `Vacancy status updated to ${newStatus}.`, 'success');
+                    loadVacancies();
+                }
+            } catch (err) {
+                alert('Action failed.');
+            }
+        }
+    </script>
+</body>
+</html>

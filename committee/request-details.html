@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review Dossier - Committee Portal</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+    <header class="top-nav">
+        <a href="dashboard.html" class="nav-brand">
+            <div class="emblem">CS</div>
+            <span>Transfer Committee Portal</span>
+        </a>
+        <div class="user-menu">
+            <div class="user-info">
+                <div class="user-name" id="nav-user-name">Loading...</div>
+                <div class="user-role-badge" id="nav-user-role">Committee Member</div>
+            </div>
+            <button onclick="handleLogout()" class="btn btn-outline btn-sm" style="color: white; border-color: rgba(255,255,255,0.3);">Logout</button>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-heading">Committee Menu</div>
+            <ul class="sidebar-menu">
+                <li><a href="dashboard.html">📊 Dashboard</a></li>
+                <li><a href="requests.html" class="active">📑 Pending Reviews Queue</a></li>
+                <li><a href="notifications.html">🔔 Notifications</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Candidate Transfer Dossier #<span id="c-req-id-header"></span></h1>
+                    <p class="page-subtitle">Inspect officer service history, optimization score, and record formal committee decision</p>
+                </div>
+                <a href="requests.html" class="btn btn-outline">← Back to Queue</a>
+            </div>
+
+            <div id="c-review-alert"></div>
+
+            <!-- Score Banner -->
+            <div class="score-box">
+                <div class="score-main">
+                    <div class="score-number" id="c-score-val">0</div>
+                    <div class="score-meta">
+                        <div style="font-size: 1.15rem; font-weight: 700;">Optimization Priority Score / 100</div>
+                        <div>Priority: <span id="c-priority-badge">LOW</span> | Status: <span id="c-status-badge">COMMITTEE_REVIEW</span></div>
+                    </div>
+                </div>
+                <div>
+                    Eligibility Verified: <span id="c-elig-badge">ELIGIBLE</span>
+                </div>
+            </div>
+
+            <!-- Officer & Request Particulars -->
+            <div class="card" style="margin-bottom: 2rem;">
+                <h3 style="color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.75rem; margin-bottom: 1.25rem;">Candidate Service Record</h3>
+
+                <div class="form-row">
+                    <div>
+                        <div style="font-size: 0.82rem; color: #64748b;">Officer Name</div>
+                        <strong id="c-name"></strong>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.82rem; color: #64748b;">Employee ID</div>
+                        <strong id="c-emp-id"></strong>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.82rem; color: #64748b;">Designation & Cadre</div>
+                        <strong id="c-cadre"></strong>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.82rem; color: #64748b;">Current Posting & Duration</div>
+                        <strong id="c-posting"></strong>
+                    </div>
+                </div>
+
+                <div style="margin-top: 1.25rem;">
+                    <div style="font-size: 0.82rem; color: #64748b;">Transfer Reason / Grounds</div>
+                    <p id="c-reason" style="background: #f8fafc; padding: 0.85rem; border-radius: 6px; border: 1px solid #e2e8f0; margin-top: 0.25rem; font-size: 0.92rem;"></p>
+                </div>
+
+                <div style="margin-top: 1.25rem;">
+                    <div style="font-size: 0.82rem; color: #64748b;">Station Preferences</div>
+                    <ol style="margin-left: 1.25rem; font-size: 0.92rem; margin-top: 0.25rem;">
+                        <li><strong>Pref 1:</strong> <span id="c-pref1"></span></li>
+                        <li><strong>Pref 2:</strong> <span id="c-pref2"></span></li>
+                        <li><strong>Pref 3:</strong> <span id="c-pref3"></span></li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- Documents -->
+            <div class="card" style="margin-bottom: 2rem;">
+                <h3 style="color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.75rem; margin-bottom: 1.25rem;">Verified Supporting Documents</h3>
+                <div id="c-docs-list">Loading documents...</div>
+            </div>
+
+            <!-- Previous Reviews -->
+            <div class="card" style="margin-bottom: 2rem;">
+                <h3 style="color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.75rem; margin-bottom: 1.25rem;">Previous Committee Remarks</h3>
+                <div id="c-prev-reviews">No previous committee reviews on file.</div>
+            </div>
+
+            <!-- Decision Form -->
+            <div class="card" style="background: #ffffff; border: 2px solid #2563eb;">
+                <h3 style="color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.75rem; margin-bottom: 1.25rem;">Record Binding Committee Decision</h3>
+
+                <form id="committee-decision-form" onsubmit="submitCommitteeDecision(event)">
+                    <div class="form-group">
+                        <label class="form-label" for="c-recommendation">Formal Committee Decision *</label>
+                        <select id="c-recommendation" class="form-control" required style="font-weight: 700; font-size: 1rem;">
+                            <option value="APPROVE">✅ APPROVE TRANSFER (Generate Government Transfer Order)</option>
+                            <option value="REJECT">❌ REJECT TRANSFER APPLICATION</option>
+                            <option value="REQUEST_MORE_INFORMATION">ℹ️ REQUEST MORE INFORMATION</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="c-remarks">Committee Remarks & Justification *</label>
+                        <textarea id="c-remarks" class="form-control" rows="3" placeholder="Enter official committee decision rationale (e.g., Approved based on 6-year posting tenure, verified medical priority, and available vacancy in Chennai)..." required></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="padding: 0.8rem 2rem; font-size: 1rem;">Submit Official Committee Decision</button>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/script.js"></script>
+    <script>
+        let requestId = 0;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = await initSession(['TRANSFER_COMMITTEE_MEMBER', 'CADRE_ADMINISTRATOR']);
+            if (!user) return;
+
+            const params = new URLSearchParams(window.location.search);
+            requestId = params.get('id');
+            if (!requestId) {
+                window.location.href = 'requests.html';
+                return;
+            }
+
+            document.getElementById('c-req-id-header').textContent = requestId;
+            loadDossier();
+        });
+
+        async function loadDossier() {
+            try {
+                const res = await fetch(API_BASE + 'transfer-request?action=get_details&request_id=' + requestId);
+                const data = await res.json();
+
+                if (data.status === 'success') {
+                    const req = data.request;
+
+                    document.getElementById('c-score-val').textContent = req.optimization_score;
+                    document.getElementById('c-priority-badge').innerHTML = renderPriorityBadge(req.priority);
+                    document.getElementById('c-status-badge').innerHTML = renderStatusBadge(req.status);
+                    document.getElementById('c-elig-badge').innerHTML = renderStatusBadge(req.eligibility_status);
+
+                    document.getElementById('c-name').textContent = req.officer_name;
+                    document.getElementById('c-emp-id').textContent = req.employee_id;
+                    document.getElementById('c-cadre').textContent = `${req.designation} (${req.cadre})`;
+                    document.getElementById('c-posting').textContent = `${req.current_posting} (${req.years_in_current_posting} yrs)`;
+                    document.getElementById('c-reason').textContent = req.reason;
+
+                    document.getElementById('c-pref1').textContent = req.preferred_location_1 || 'None';
+                    document.getElementById('c-pref2').textContent = req.preferred_location_2 || 'None';
+                    document.getElementById('c-pref3').textContent = req.preferred_location_3 || 'None';
+
+                    // Render Documents
+                    const docsDiv = document.getElementById('c-docs-list');
+                    if (data.documents && data.documents.length > 0) {
+                        docsDiv.innerHTML = `<ul style="list-style: none; padding: 0;">` +
+                            data.documents.map(d => `
+                                <li style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e2e8f0;">
+                                    <div>
+                                        <strong>📄 ${d.document_name}</strong> (${d.document_type})
+                                    </div>
+                                    <div>
+                                        ${renderStatusBadge(d.verification_status)}
+                                    </div>
+                                </li>
+                            `).join('') + `</ul>`;
+                    } else {
+                        docsDiv.innerHTML = '<p style="color: #64748b;">No documents uploaded.</p>';
+                    }
+
+                    // Render Previous Reviews
+                    const revDiv = document.getElementById('c-prev-reviews');
+                    if (data.reviews && data.reviews.length > 0) {
+                        revDiv.innerHTML = data.reviews.map(r => `
+                            <div style="background: #f8fafc; border-left: 4px solid #2563eb; padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    <strong>Member: ${r.reviewer_name}</strong>
+                                    <span>${renderStatusBadge(r.recommendation)}</span>
+                                </div>
+                                <p style="color: #475569; font-size: 0.9rem;">${r.remarks || 'No remarks.'}</p>
+                                <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 0.4rem;">Date: ${r.review_date}</div>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function submitCommitteeDecision(e) {
+            e.preventDefault();
+            const rec = document.getElementById('c-recommendation').value;
+            const remarks = document.getElementById('c-remarks').value.trim();
+
+            if (!confirm(`Are you sure you want to submit official decision: ${rec}?`)) return;
+
+            try {
+                const res = await fetch(API_BASE + 'review', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `request_id=${requestId}&recommendation=${encodeURIComponent(rec)}&remarks=${encodeURIComponent(remarks)}`
+                });
+
+                const data = await res.json();
+                if (data.status === 'success') {
+                    showAlert('c-review-alert', `Committee decision recorded: ${rec}. Request processing updated.`, 'success');
+                    setTimeout(() => {
+                        window.location.href = 'requests.html';
+                    }, 1200);
+                } else {
+                    showAlert('c-review-alert', data.message || 'Failed to submit review.', 'error');
+                }
+            } catch (err) {
+                showAlert('c-review-alert', 'Connection error occurred.', 'error');
+            }
+        }
+    </script>
+</body>
+</html>

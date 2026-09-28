@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Committee Dashboard - Transfer Portal</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+    <header class="top-nav">
+        <a href="dashboard.html" class="nav-brand">
+            <div class="emblem">CS</div>
+            <span>Transfer Committee Portal</span>
+        </a>
+        <div class="user-menu">
+            <div class="user-info">
+                <div class="user-name" id="nav-user-name">Loading...</div>
+                <div class="user-role-badge" id="nav-user-role">Committee Member</div>
+            </div>
+            <button onclick="handleLogout()" class="btn btn-outline btn-sm" style="color: white; border-color: rgba(255,255,255,0.3);">Logout</button>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-heading">Committee Menu</div>
+            <ul class="sidebar-menu">
+                <li><a href="dashboard.html" class="active">📊 Dashboard</a></li>
+                <li><a href="requests.html">📑 Pending Reviews Queue</a></li>
+                <li><a href="notifications.html">🔔 Notifications</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Transfer Committee Review Center</h1>
+                    <p class="page-subtitle">Review forwarded applications, evaluate optimization scores, and issue binding approval decisions</p>
+                </div>
+            </div>
+
+            <!-- Metric Cards -->
+            <div class="grid-cards">
+                <div class="card stat-card">
+                    <div>
+                        <div class="stat-title">Awaiting Review</div>
+                        <div class="stat-value" id="c-awaiting">0</div>
+                    </div>
+                    <div class="stat-icon icon-amber">⏳</div>
+                </div>
+
+                <div class="card stat-card">
+                    <div>
+                        <div class="stat-title">High Priority</div>
+                        <div class="stat-value" id="c-high">0</div>
+                    </div>
+                    <div class="stat-icon icon-purple">🔥</div>
+                </div>
+
+                <div class="card stat-card">
+                    <div>
+                        <div class="stat-title">Medium Priority</div>
+                        <div class="stat-value" id="c-med">0</div>
+                    </div>
+                    <div class="stat-icon icon-blue">📊</div>
+                </div>
+
+                <div class="card stat-card">
+                    <div>
+                        <div class="stat-title">Approved Decisions</div>
+                        <div class="stat-value" id="c-approved">0</div>
+                    </div>
+                    <div class="stat-icon icon-green">✅</div>
+                </div>
+
+                <div class="card stat-card">
+                    <div>
+                        <div class="stat-title">Rejected Decisions</div>
+                        <div class="stat-value" id="c-rejected">0</div>
+                    </div>
+                    <div class="stat-icon icon-red">❌</div>
+                </div>
+            </div>
+
+            <!-- Queue Table -->
+            <div class="table-container">
+                <div class="table-header">
+                    <h3 class="table-title">Forwarded Applications Queue</h3>
+                    <a href="requests.html" class="btn btn-outline btn-sm">View Full Queue</a>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Req ID</th>
+                            <th>Officer Name</th>
+                            <th>Current Posting</th>
+                            <th>Target Preference</th>
+                            <th>Optimization Score</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="c-queue-tbody">
+                        <tr><td colspan="8" style="text-align: center; color: #64748b;">Loading committee queue...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = await initSession(['TRANSFER_COMMITTEE_MEMBER']);
+            if (!user) return;
+
+            loadCommitteeMetrics();
+            loadCommitteeQueue();
+        });
+
+        async function loadCommitteeMetrics() {
+            try {
+                const res = await fetch(API_BASE + 'dashboard');
+                const result = await res.json();
+                if (result.status === 'success') {
+                    const d = result.data;
+                    document.getElementById('c-awaiting').textContent = d.awaiting_review || 0;
+                    document.getElementById('c-high').textContent = d.high_priority || 0;
+                    document.getElementById('c-med').textContent = d.medium_priority || 0;
+                    document.getElementById('c-approved').textContent = d.approved_requests || 0;
+                    document.getElementById('c-rejected').textContent = d.rejected_requests || 0;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function loadCommitteeQueue() {
+            try {
+                const res = await fetch(API_BASE + 'transfer-request?action=list_all&status=COMMITTEE_REVIEW');
+                const data = await res.json();
+                const tbody = document.getElementById('c-queue-tbody');
+
+                if (data.status === 'success' && data.requests.length > 0) {
+                    tbody.innerHTML = '';
+                    data.requests.forEach(req => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td><strong>#${req.request_id}</strong></td>
+                            <td><strong>${req.officer_name}</strong><br><small style="color: #64748b;">${req.employee_id}</small></td>
+                            <td>${req.current_posting} (${req.years_in_current_posting} yrs)</td>
+                            <td>${req.preferred_location_1}</td>
+                            <td><strong style="color: #2563eb; font-size: 1.1rem;">${req.optimization_score} / 100</strong></td>
+                            <td>${renderPriorityBadge(req.priority)}</td>
+                            <td>${renderStatusBadge(req.status)}</td>
+                            <td><a href="request-details.html?id=${req.request_id}" class="btn btn-primary btn-sm">Review & Decide</a></td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #64748b;">No transfer applications currently awaiting committee review.</td></tr>`;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Transfer Requests - Officer Portal</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+    <header class="top-nav">
+        <a href="dashboard.html" class="nav-brand">
+            <div class="emblem">CS</div>
+            <span>Officer Portal</span>
+        </a>
+        <div class="user-menu">
+            <div class="user-info">
+                <div class="user-name" id="nav-user-name">Loading...</div>
+                <div class="user-role-badge" id="nav-user-role">Officer</div>
+            </div>
+            <button onclick="handleLogout()" class="btn btn-outline btn-sm" style="color: white; border-color: rgba(255,255,255,0.3);">Logout</button>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-heading">Main Menu</div>
+            <ul class="sidebar-menu">
+                <li><a href="dashboard.html">📊 Dashboard</a></li>
+                <li><a href="profile.html">👤 My Profile</a></li>
+                <li><a href="transfer-request.html">📝 Submit Transfer Request</a></li>
+                <li><a href="my-requests.html" class="active">📑 My Requests</a></li>
+                <li><a href="orders.html">📜 Transfer Orders</a></li>
+                <li><a href="notifications.html">🔔 Notifications</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">My Transfer Applications</h1>
+                    <p class="page-subtitle">Track status, optimization scores, and committee decisions</p>
+                </div>
+                <a href="transfer-request.html" class="btn btn-primary">➕ Submit New Request</a>
+            </div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <h3 class="table-title">Submitted Transfer Applications</h3>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Req ID</th>
+                            <th>Date</th>
+                            <th>Reason</th>
+                            <th>Preferences</th>
+                            <th>Eligibility</th>
+                            <th>Score</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="my-requests-tbody">
+                        <tr><td colspan="9" style="text-align: center; color: #64748b;">Loading requests...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = await initSession(['CIVIL_SERVICE_OFFICER']);
+            if (!user) return;
+            loadMyRequests();
+        });
+
+        async function loadMyRequests() {
+            try {
+                const res = await fetch(API_BASE + 'transfer-request?action=my_requests');
+                const data = await res.json();
+                const tbody = document.getElementById('my-requests-tbody');
+
+                if (data.status === 'success' && data.requests.length > 0) {
+                    tbody.innerHTML = '';
+                    data.requests.forEach(req => {
+                        const tr = document.createElement('tr');
+                        const prefs = [req.preferred_location_1, req.preferred_location_2, req.preferred_location_3]
+                            .filter(p => p && p.length > 0).join(', ');
+
+                        tr.innerHTML = `
+                            <td><strong>#${req.request_id}</strong></td>
+                            <td>${req.request_date ? req.request_date.substring(0, 10) : ''}</td>
+                            <td style="max-width: 220px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${req.reason}</td>
+                            <td>${prefs}</td>
+                            <td>${renderStatusBadge(req.eligibility_status)}</td>
+                            <td><strong style="color: #2563eb;">${req.optimization_score} / 100</strong></td>
+                            <td>${renderPriorityBadge(req.priority)}</td>
+                            <td>${renderStatusBadge(req.status)}</td>
+                            <td><a href="request-details.html?id=${req.request_id}" class="btn btn-outline btn-sm">Details</a></td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #64748b;">No transfer requests found.</td></tr>`;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+    </script>
+</body>
+</html>

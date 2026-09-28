@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - Officer Portal</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+    <header class="top-nav">
+        <a href="dashboard.html" class="nav-brand">
+            <div class="emblem">CS</div>
+            <span>Officer Portal</span>
+        </a>
+        <div class="user-menu">
+            <div class="user-info">
+                <div class="user-name" id="nav-user-name">Loading...</div>
+                <div class="user-role-badge" id="nav-user-role">Officer</div>
+            </div>
+            <button onclick="handleLogout()" class="btn btn-outline btn-sm" style="color: white; border-color: rgba(255,255,255,0.3);">Logout</button>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-heading">Main Menu</div>
+            <ul class="sidebar-menu">
+                <li><a href="dashboard.html">📊 Dashboard</a></li>
+                <li><a href="profile.html" class="active">👤 My Profile</a></li>
+                <li><a href="transfer-request.html">📝 Submit Transfer Request</a></li>
+                <li><a href="my-requests.html">📑 My Requests</a></li>
+                <li><a href="orders.html">📜 Transfer Orders</a></li>
+                <li><a href="notifications.html">🔔 Notifications</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Officer Profile & Service Record</h1>
+                    <p class="page-subtitle">View your official civil service record and contact details</p>
+                </div>
+            </div>
+
+            <div id="profile-alert"></div>
+
+            <div class="card" style="margin-bottom: 2rem;">
+                <h3 style="color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.75rem; margin-bottom: 1.25rem;">Service Particulars</h3>
+                
+                <form id="profile-form" onsubmit="updateProfile(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Employee ID</label>
+                            <input type="text" id="p-emp-id" class="form-control" readonly style="background-color: #f1f5f9;">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Officer Name</label>
+                            <input type="text" id="p-name" class="form-control" readonly style="background-color: #f1f5f9;">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Cadre</label>
+                            <input type="text" id="p-cadre" class="form-control" readonly style="background-color: #f1f5f9;">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Designation</label>
+                            <input type="text" id="p-designation" class="form-control" readonly style="background-color: #f1f5f9;">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Department</label>
+                            <input type="text" id="p-department" class="form-control" readonly style="background-color: #f1f5f9;">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Joining Date</label>
+                            <input type="text" id="p-joining" class="form-control" readonly style="background-color: #f1f5f9;">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Current Posting Location</label>
+                            <input type="text" id="p-posting" class="form-control" readonly style="background-color: #f1f5f9;">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Current District</label>
+                            <input type="text" id="p-district" class="form-control" readonly style="background-color: #f1f5f9;">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Years in Current Posting</label>
+                            <input type="text" id="p-years" class="form-control" readonly style="background-color: #f1f5f9;">
+                        </div>
+                    </div>
+
+                    <h4 style="color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; margin: 1.5rem 0 1rem 0;">Contact Details (Editable)</h4>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="p-email">Official Email Address</label>
+                            <input type="email" id="p-email" class="form-control" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="p-phone">Phone Number</label>
+                            <input type="text" id="p-phone" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">Update Contact Details</button>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = await initSession(['CIVIL_SERVICE_OFFICER']);
+            if (!user) return;
+            loadProfile();
+        });
+
+        async function loadProfile() {
+            try {
+                const res = await fetch(API_BASE + 'officer?action=get_profile');
+                const data = await res.json();
+
+                if (data.status === 'success') {
+                    const o = data.officer;
+                    document.getElementById('p-emp-id').value = o.employee_id || '';
+                    document.getElementById('p-name').value = o.name || '';
+                    document.getElementById('p-cadre').value = o.cadre || '';
+                    document.getElementById('p-designation').value = o.designation || '';
+                    document.getElementById('p-department').value = o.department || '';
+                    document.getElementById('p-joining').value = o.joining_date || '';
+                    document.getElementById('p-posting').value = o.current_posting || '';
+                    document.getElementById('p-district').value = o.current_district || '';
+                    document.getElementById('p-years').value = (o.years_in_current_posting || 0) + ' Years';
+                    document.getElementById('p-email').value = o.email || '';
+                    document.getElementById('p-phone').value = o.phone || '';
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function updateProfile(e) {
+            e.preventDefault();
+            const email = document.getElementById('p-email').value.trim();
+            const phone = document.getElementById('p-phone').value.trim();
+
+            try {
+                const res = await fetch(API_BASE + 'officer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `action=update_profile&email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}`
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    showAlert('profile-alert', 'Contact information updated successfully.', 'success');
+                } else {
+                    showAlert('profile-alert', data.message || 'Failed to update profile.', 'error');
+                }
+            } catch (err) {
+                showAlert('profile-alert', 'Connection error occurred.', 'error');
+            }
+        }
+    </script>
+</body>
+</html>

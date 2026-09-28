@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Civil Services Officer Posting & Transfer Optimization System</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .hero {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: white;
+            padding: 4.5rem 2rem;
+            text-align: center;
+            border-bottom: 4px solid #2563eb;
+        }
+        .hero-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            letter-spacing: -0.5px;
+        }
+        .hero-subtitle {
+            font-size: 1.15rem;
+            color: #94a3b8;
+            max-width: 800px;
+            margin: 0 auto 2rem auto;
+            line-height: 1.6;
+        }
+        .hero-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 3rem auto;
+            padding: 0 1.5rem;
+        }
+        .feature-box {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
+        }
+        .feature-box:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+        .feature-icon {
+            font-size: 2.2rem;
+            margin-bottom: 1rem;
+        }
+        .workflow-section {
+            background-color: #f1f5f9;
+            padding: 3.5rem 2rem;
+            border-top: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .workflow-steps {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1.5rem;
+            max-width: 1200px;
+            margin: 2rem auto 0 auto;
+        }
+        .step-card {
+            background: white;
+            padding: 1.25rem 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid #2563eb;
+            width: 260px;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .step-num {
+            font-weight: 800;
+            color: #2563eb;
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="top-nav">
+        <a href="index.html" class="nav-brand">
+            <div class="emblem">CS</div>
+            <span>Civil Services Transfer System</span>
+        </a>
+        <div style="display: flex; gap: 1rem;">
+            <a href="about.html" class="btn btn-outline" style="color: white; border-color: rgba(255,255,255,0.3);">About System</a>
+            <a href="login.html" class="btn btn-primary">Portal Login</a>
+        </div>
+    </header>
+
+    <section class="hero">
+        <h1 class="hero-title">Civil Services Officer Posting & Transfer Optimization System</h1>
+        <p class="hero-subtitle">
+            A centralized rule-based administrative governance portal for transparent civil services transfer management, policy verification, vacancy matching, optimization scoring, and committee review.
+        </p>
+        <div class="hero-buttons">
+            <a href="login.html" class="btn btn-primary" style="padding: 0.8rem 2rem; font-size: 1rem;">Access Governance Portal</a>
+            <a href="about.html" class="btn btn-secondary" style="padding: 0.8rem 2rem; font-size: 1rem;">View Architecture</a>
+        </div>
+    </section>
+
+    <div class="features-grid">
+        <div class="feature-box">
+            <div class="feature-icon">🏛️</div>
+            <h3 style="margin-bottom: 0.5rem; color: #0f172a;">Multi-Role Administration</h3>
+            <p style="color: #64748b; font-size: 0.9rem;">Distinct dedicated workspaces for Civil Services Officers, Cadre Administrators, and Transfer Committee Members with strict authorization.</p>
+        </div>
+
+        <div class="feature-box">
+            <div class="feature-icon">📊</div>
+            <h3 style="margin-bottom: 0.5rem; color: #0f172a;">Rule-Based Optimization (100 Pts)</h3>
+            <p style="color: #64748b; font-size: 0.9rem;">Evaluates eligibility, service duration, candidate location preferences, vacancy availability, administrative priority, and transfer history into a clear 100-point priority score.</p>
+        </div>
+
+        <div class="feature-box">
+            <div class="feature-icon">📄</div>
+            <h3 style="margin-bottom: 0.5rem; color: #0f172a;">Official Order Generation</h3>
+            <p style="color: #64748b; font-size: 0.9rem;">Automatically generates official transfer orders upon committee approval with digital acknowledgement and joining confirmation tracking.</p>
+        </div>
+
+        <div class="feature-box">
+            <div class="feature-icon">📈</div>
+            <h3 style="margin-bottom: 0.5rem; color: #0f172a;">Administrative Reports & Analytics</h3>
+            <p style="color: #64748b; font-size: 0.9rem;">Real-time reporting across officers, vacancies, requests, committee decisions, and optimization scores with direct CSV data export.</p>
+        </div>
+    </div>
+
+    <section class="workflow-section">
+        <h2 style="text-align: center; color: #0f172a; font-size: 1.8rem; margin-bottom: 0.5rem;">End-to-End Governance Workflow</h2>
+        <p style="text-align: center; color: #64748b; font-size: 0.95rem;">Systematic 6-step lifecycle from request submission to transfer completion</p>
+
+        <div class="workflow-steps">
+            <div class="step-card">
+                <div class="step-num">Step 01</div>
+                <strong>Submit Transfer Request</strong>
+                <p style="color: #64748b; margin-top: 0.25rem;">Officer submits location preferences & supporting documents.</p>
+            </div>
+
+            <div class="step-card">
+                <div class="step-num">Step 02</div>
+                <strong>Document Audit & Verification</strong>
+                <p style="color: #64748b; margin-top: 0.25rem;">Cadre Administrator verifies supporting documents and policy rules.</p>
+            </div>
+
+            <div class="step-card">
+                <div class="step-num">Step 03</div>
+                <strong>Optimization & Ranking</strong>
+                <p style="color: #64748b; margin-top: 0.25rem;">System calculates 100-point score & assigns HIGH/MEDIUM/LOW priority.</p>
+            </div>
+
+            <div class="step-card">
+                <div class="step-num">Step 04</div>
+                <strong>Committee Review & Decision</strong>
+                <p style="color: #64748b; margin-top: 0.25rem;">Transfer Committee evaluates candidate dossier and approves/rejects.</p>
+            </div>
+
+            <div class="step-card">
+                <div class="step-num">Step 05</div>
+                <strong>Order Generation & Notification</strong>
+                <p style="color: #64748b; margin-top: 0.25rem;">System issues official Transfer Order & notifies the officer.</p>
+            </div>
+
+            <div class="step-card">
+                <div class="step-num">Step 06</div>
+                <strong>Acknowledgement & Completion</strong>
+                <p style="color: #64748b; margin-top: 0.25rem;">Officer acknowledges order, confirms joining, and updates posting.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2026 Civil Services Officer Posting & Transfer Optimization System | Software Engineering Laboratory Project</p>
+    </footer>
+
+</body>
+</html>

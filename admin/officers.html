@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Officers Registry - Administrator Portal</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+    <header class="top-nav">
+        <a href="dashboard.html" class="nav-brand">
+            <div class="emblem">CS</div>
+            <span>Cadre Administrator Portal</span>
+        </a>
+        <div class="user-menu">
+            <div class="user-info">
+                <div class="user-name" id="nav-user-name">Loading...</div>
+                <div class="user-role-badge" id="nav-user-role">Administrator</div>
+            </div>
+            <button onclick="handleLogout()" class="btn btn-outline btn-sm" style="color: white; border-color: rgba(255,255,255,0.3);">Logout</button>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-heading">Admin Management</div>
+            <ul class="sidebar-menu">
+                <li><a href="dashboard.html">📊 Dashboard</a></li>
+                <li><a href="officers.html" class="active">👥 Officers Registry</a></li>
+                <li><a href="vacancies.html">🏢 Vacancy Management</a></li>
+                <li><a href="policies.html">📜 Transfer Policies</a></li>
+                <li><a href="transfer-requests.html">📑 Transfer Requests</a></li>
+                <li><a href="orders.html">📋 Transfer Orders</a></li>
+                <li><a href="reports.html">📈 Reports & Analytics</a></li>
+                <li><a href="notifications.html">🔔 Notifications</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Civil Services Officer Registry</h1>
+                    <p class="page-subtitle">Manage officer records, service duration, cadre classification, and account status</p>
+                </div>
+                <button onclick="openModal('add-officer-modal')" class="btn btn-primary">➕ Add New Officer</button>
+            </div>
+
+            <div id="officers-alert"></div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <h3 class="table-title">Officers Database</h3>
+                    <div class="table-actions">
+                        <input type="text" id="officer-search" class="form-control" placeholder="Search officer name / ID..." style="width: 240px;" onkeyup="loadOfficers()">
+                        <select id="cadre-filter" class="form-control" style="width: 140px;" onchange="loadOfficers()">
+                            <option value="">All Cadres</option>
+                            <option value="IAS">IAS</option>
+                            <option value="IPS">IPS</option>
+                            <option value="IFS">IFS</option>
+                            <option value="State Civil Service">State Cadre</option>
+                        </select>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Officer ID</th>
+                            <th>Employee ID</th>
+                            <th>Name</th>
+                            <th>Cadre / Designation</th>
+                            <th>Current Posting</th>
+                            <th>Service Duration</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="officers-tbody">
+                        <tr><td colspan="8" style="text-align: center; color: #64748b;">Loading officers registry...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Officer Modal -->
+    <div class="modal-overlay" id="add-officer-modal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 class="modal-title">Register New Civil Services Officer</h3>
+                <button class="modal-close" onclick="closeModal('add-officer-modal')">&times;</button>
+            </div>
+            <form id="add-officer-form" onsubmit="submitAddOfficer(event)">
+                <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="add-username">Login Username *</label>
+                            <input type="text" id="add-username" class="form-control" required placeholder="e.g. officer6">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="add-password">Login Password *</label>
+                            <input type="password" id="add-password" class="form-control" required placeholder="e.g. officer123">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="add-emp-id">Employee ID *</label>
+                            <input type="text" id="add-emp-id" class="form-control" required placeholder="e.g. CSO1006">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="add-name">Full Name *</label>
+                            <input type="text" id="add-name" class="form-control" required placeholder="e.g. Anand Kumar">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="add-email">Email Address</label>
+                            <input type="email" id="add-email" class="form-control" placeholder="anand@civilservices.tn.gov.in">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="add-phone">Phone Number</label>
+                            <input type="text" id="add-phone" class="form-control" placeholder="9876543215">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="add-designation">Designation</label>
+                            <input type="text" id="add-designation" class="form-control" placeholder="District Collector">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="add-department">Department</label>
+                            <input type="text" id="add-department" class="form-control" placeholder="Revenue Administration">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="add-cadre">Cadre</label>
+                            <select id="add-cadre" class="form-control">
+                                <option value="IAS">IAS</option>
+                                <option value="IPS">IPS</option>
+                                <option value="IFS">IFS</option>
+                                <option value="State Civil Service">State Cadre</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="add-posting">Current Posting Location</label>
+                            <input type="text" id="add-posting" class="form-control" placeholder="Chennai Collectorate">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="add-district">Current District</label>
+                            <input type="text" id="add-district" class="form-control" placeholder="Chennai">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="add-years">Years in Current Posting</label>
+                            <input type="number" id="add-years" class="form-control" value="3" min="0">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('add-officer-modal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save & Create Officer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../js/script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = await initSession(['CADRE_ADMINISTRATOR']);
+            if (!user) return;
+            loadOfficers();
+        });
+
+        async function loadOfficers() {
+            const search = document.getElementById('officer-search').value.trim();
+            const cadre = document.getElementById('cadre-filter').value;
+
+            try {
+                const res = await fetch(API_BASE + `officer?action=list&search=${encodeURIComponent(search)}&cadre=${encodeURIComponent(cadre)}`);
+                const data = await res.json();
+                const tbody = document.getElementById('officers-tbody');
+
+                if (data.status === 'success' && data.officers.length > 0) {
+                    tbody.innerHTML = '';
+                    data.officers.forEach(o => {
+                        const tr = document.createElement('tr');
+                        const isAct = o.status === 'ACTIVE';
+                        tr.innerHTML = `
+                            <td>#${o.officer_id}</td>
+                            <td><strong>${o.employee_id}</strong></td>
+                            <td><strong>${o.name}</strong><br><small style="color: #64748b;">Username: ${o.username}</small></td>
+                            <td>${o.designation} (${o.cadre})</td>
+                            <td>${o.current_posting} (${o.current_district})</td>
+                            <td><strong>${o.years_in_current_posting} Years</strong></td>
+                            <td>${renderStatusBadge(o.status)}</td>
+                            <td>
+                                <button onclick="toggleOfficerStatus(${o.officer_id}, '${isAct ? 'INACTIVE' : 'ACTIVE'}')" class="btn ${isAct ? 'btn-danger' : 'btn-success'} btn-sm">
+                                    ${isAct ? 'Deactivate' : 'Activate'}
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #64748b;">No officer records found.</td></tr>`;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function submitAddOfficer(e) {
+            e.preventDefault();
+            const u = document.getElementById('add-username').value.trim();
+            const p = document.getElementById('add-password').value.trim();
+            const emp = document.getElementById('add-emp-id').value.trim();
+            const name = document.getElementById('add-name').value.trim();
+            const email = document.getElementById('add-email').value.trim();
+            const phone = document.getElementById('add-phone').value.trim();
+            const des = document.getElementById('add-designation').value.trim();
+            const dept = document.getElementById('add-department').value.trim();
+            const cadre = document.getElementById('add-cadre').value;
+            const post = document.getElementById('add-posting').value.trim();
+            const dist = document.getElementById('add-district').value.trim();
+            const yrs = document.getElementById('add-years').value;
+
+            try {
+                const res = await fetch(API_BASE + 'officer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `action=add&username=${encodeURIComponent(u)}&password=${encodeURIComponent(p)}&employee_id=${encodeURIComponent(emp)}&name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}&designation=${encodeURIComponent(des)}&department=${encodeURIComponent(dept)}&cadre=${encodeURIComponent(cadre)}&current_posting=${encodeURIComponent(post)}&current_district=${encodeURIComponent(dist)}&years_in_current_posting=${encodeURIComponent(yrs)}`
+                });
+
+                const data = await res.json();
+                if (data.status === 'success') {
+                    closeModal('add-officer-modal');
+                    showAlert('officers-alert', 'Officer registered successfully.', 'success');
+                    loadOfficers();
+                } else {
+                    alert(data.message || 'Failed to add officer.');
+                }
+            } catch (err) {
+                alert('Connection error occurred.');
+            }
+        }
+
+        async function toggleOfficerStatus(officerId, newStatus) {
+            if (!confirm(`Are you sure you want to change officer status to ${newStatus}?`)) return;
+            try {
+                const res = await fetch(API_BASE + 'officer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `action=toggle_status&officer_id=${officerId}&status=${newStatus}`
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    showAlert('officers-alert', `Officer status changed to ${newStatus}.`, 'success');
+                    loadOfficers();
+                }
+            } catch (err) {
+                alert('Action failed.');
+            }
+        }
+    </script>
+</body>
+</html>

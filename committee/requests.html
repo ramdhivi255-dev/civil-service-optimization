@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pending Reviews Queue - Committee Portal</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+    <header class="top-nav">
+        <a href="dashboard.html" class="nav-brand">
+            <div class="emblem">CS</div>
+            <span>Transfer Committee Portal</span>
+        </a>
+        <div class="user-menu">
+            <div class="user-info">
+                <div class="user-name" id="nav-user-name">Loading...</div>
+                <div class="user-role-badge" id="nav-user-role">Committee Member</div>
+            </div>
+            <button onclick="handleLogout()" class="btn btn-outline btn-sm" style="color: white; border-color: rgba(255,255,255,0.3);">Logout</button>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-heading">Committee Menu</div>
+            <ul class="sidebar-menu">
+                <li><a href="dashboard.html">📊 Dashboard</a></li>
+                <li><a href="requests.html" class="active">📑 Pending Reviews Queue</a></li>
+                <li><a href="notifications.html">🔔 Notifications</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Applications Pending Committee Review</h1>
+                    <p class="page-subtitle">Evaluate candidate dossiers, check score rankings, and issue decision orders</p>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <h3 class="table-title">Forwarded Applications</h3>
+                    <div class="table-actions">
+                        <select id="priority-filter" class="form-control" style="width: 160px;" onchange="loadQueue()">
+                            <option value="">All Priorities</option>
+                            <option value="HIGH">HIGH Priority</option>
+                            <option value="MEDIUM">MEDIUM Priority</option>
+                            <option value="LOW">LOW Priority</option>
+                        </select>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Req ID</th>
+                            <th>Officer Name</th>
+                            <th>Current Posting</th>
+                            <th>Target Preference</th>
+                            <th>Eligibility</th>
+                            <th>Optimization Score</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="queue-tbody">
+                        <tr><td colspan="9" style="text-align: center; color: #64748b;">Loading requests queue...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = await initSession(['TRANSFER_COMMITTEE_MEMBER']);
+            if (!user) return;
+            loadQueue();
+        });
+
+        async function loadQueue() {
+            const priority = document.getElementById('priority-filter').value;
+            try {
+                const res = await fetch(API_BASE + `transfer-request?action=list_all&priority=${encodeURIComponent(priority)}`);
+                const data = await res.json();
+                const tbody = document.getElementById('queue-tbody');
+
+                if (data.status === 'success' && data.requests.length > 0) {
+                    tbody.innerHTML = '';
+                    data.requests.forEach(req => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td><strong>#${req.request_id}</strong></td>
+                            <td><strong>${req.officer_name}</strong><br><small style="color: #64748b;">${req.employee_id}</small></td>
+                            <td>${req.current_posting} (${req.years_in_current_posting} yrs)</td>
+                            <td>${req.preferred_location_1}</td>
+                            <td>${renderStatusBadge(req.eligibility_status)}</td>
+                            <td><strong style="color: #2563eb; font-size: 1.1rem;">${req.optimization_score} / 100</strong></td>
+                            <td>${renderPriorityBadge(req.priority)}</td>
+                            <td>${renderStatusBadge(req.status)}</td>
+                            <td><a href="request-details.html?id=${req.request_id}" class="btn btn-primary btn-sm">Review Dossier</a></td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #64748b;">No transfer applications found.</td></tr>`;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+    </script>
+</body>
+</html>

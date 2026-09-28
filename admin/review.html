@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inspect & Score Request - Administrator Portal</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+    <header class="top-nav">
+        <a href="dashboard.html" class="nav-brand">
+            <div class="emblem">CS</div>
+            <span>Cadre Administrator Portal</span>
+        </a>
+        <div class="user-menu">
+            <div class="user-info">
+                <div class="user-name" id="nav-user-name">Loading...</div>
+                <div class="user-role-badge" id="nav-user-role">Administrator</div>
+            </div>
+            <button onclick="handleLogout()" class="btn btn-outline btn-sm" style="color: white; border-color: rgba(255,255,255,0.3);">Logout</button>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-heading">Admin Management</div>
+            <ul class="sidebar-menu">
+                <li><a href="dashboard.html">📊 Dashboard</a></li>
+                <li><a href="officers.html">👥 Officers Registry</a></li>
+                <li><a href="vacancies.html">🏢 Vacancy Management</a></li>
+                <li><a href="policies.html">📜 Transfer Policies</a></li>
+                <li><a href="transfer-requests.html" class="active">📑 Transfer Requests</a></li>
+                <li><a href="orders.html">📋 Transfer Orders</a></li>
+                <li><a href="reports.html">📈 Reports & Analytics</a></li>
+                <li><a href="notifications.html">🔔 Notifications</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Inspect & Score Transfer Application #<span id="req-id-num"></span></h1>
+                    <p class="page-subtitle">Verify supporting documents, evaluate 100-point optimization score, and forward to committee</p>
+                </div>
+                <a href="transfer-requests.html" class="btn btn-outline">← Back to Ledger</a>
+            </div>
+
+            <div id="admin-review-alert"></div>
+
+            <!-- Optimization Score Summary Banner -->
+            <div class="score-box">
+                <div class="score-main">
+                    <div class="score-number" id="score-val">0</div>
+                    <div class="score-meta">
+                        <div style="font-size: 1.15rem; font-weight: 700;">Rule-Based Optimization Score / 100</div>
+                        <div>Assigned Priority: <span id="score-priority-badge">LOW</span> | Status: <span id="score-status-badge">SUBMITTED</span></div>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <div>Eligibility: <span id="score-eligibility-badge">PENDING</span></div>
+                    <button onclick="runOptimizationEngine()" class="btn btn-success btn-sm" style="margin-top: 0.5rem;">⚡ Run Optimization Engine</button>
+                </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 2rem;">
+                <h3 style="color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.75rem; margin-bottom: 1.25rem;">Candidate & Application Details</h3>
+                
+                <div class="form-row">
+                    <div>
+                        <div style="font-size: 0.82rem; color: #64748b;">Officer Name</div>
+                        <strong id="a-name"></strong>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.82rem; color: #64748b;">Employee ID</div>
+                        <strong id="a-emp-id"></strong>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.82rem; color: #64748b;">Designation & Cadre</div>
+                        <strong id="a-cadre"></strong>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.82rem; color: #64748b;">Current Posting</div>
+                        <strong id="a-posting"></strong>
+                    </div>
+                </div>
+
+                <div style="margin-top: 1.25rem;">
+                    <div style="font-size: 0.82rem; color: #64748b;">Transfer Reason / Grounds</div>
+                    <p id="a-reason" style="background: #f8fafc; padding: 0.85rem; border-radius: 6px; border: 1px solid #e2e8f0; margin-top: 0.25rem;"></p>
+                </div>
+
+                <div style="margin-top: 1.25rem;">
+                    <div style="font-size: 0.82rem; color: #64748b;">Target Location Preferences</div>
+                    <ol style="margin-left: 1.25rem; font-size: 0.92rem; margin-top: 0.25rem;">
+                        <li><strong>1st Preference:</strong> <span id="a-pref1"></span></li>
+                        <li><strong>2nd Preference:</strong> <span id="a-pref2"></span></li>
+                        <li><strong>3rd Preference:</strong> <span id="a-pref3"></span></li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- Documents Verification Panel -->
+            <div class="card" style="margin-bottom: 2rem;">
+                <h3 style="color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.75rem; margin-bottom: 1.25rem;">Document Audit & Verification</h3>
+                <div id="admin-docs-list">Loading documents...</div>
+            </div>
+
+            <!-- Actions Panel -->
+            <div class="card">
+                <h3 style="color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.75rem; margin-bottom: 1.25rem;">Administrator Administrative Actions</h3>
+                
+                <div class="form-group">
+                    <label class="form-label" for="admin-remarks">Administrator Remarks</label>
+                    <textarea id="admin-remarks" class="form-control" rows="2" placeholder="Add administrative verification notes or recommendations..."></textarea>
+                </div>
+
+                <div style="display: flex; gap: 1rem;">
+                    <button onclick="forwardToCommittee()" class="btn btn-primary" style="padding: 0.75rem 1.5rem;">➡️ Forward to Transfer Committee</button>
+                    <button onclick="rejectRequest()" class="btn btn-danger">❌ Reject Request</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/script.js"></script>
+    <script>
+        let requestId = 0;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = await initSession(['CADRE_ADMINISTRATOR']);
+            if (!user) return;
+
+            const params = new URLSearchParams(window.location.search);
+            requestId = params.get('id');
+            if (!requestId) {
+                window.location.href = 'transfer-requests.html';
+                return;
+            }
+
+            document.getElementById('req-id-num').textContent = requestId;
+            loadDetails();
+        });
+
+        async function loadDetails() {
+            try {
+                const res = await fetch(API_BASE + 'transfer-request?action=get_details&request_id=' + requestId);
+                const data = await res.json();
+
+                if (data.status === 'success') {
+                    const req = data.request;
+                    document.getElementById('score-val').textContent = req.optimization_score;
+                    document.getElementById('score-priority-badge').innerHTML = renderPriorityBadge(req.priority);
+                    document.getElementById('score-status-badge').innerHTML = renderStatusBadge(req.status);
+                    document.getElementById('score-eligibility-badge').innerHTML = renderStatusBadge(req.eligibility_status);
+
+                    document.getElementById('a-name').textContent = req.officer_name;
+                    document.getElementById('a-emp-id').textContent = req.employee_id;
+                    document.getElementById('a-cadre').textContent = `${req.designation} (${req.cadre})`;
+                    document.getElementById('a-posting').textContent = `${req.current_posting} (${req.years_in_current_posting} yrs)`;
+                    document.getElementById('a-reason').textContent = req.reason;
+
+                    document.getElementById('a-pref1').textContent = req.preferred_location_1 || 'None';
+                    document.getElementById('a-pref2').textContent = req.preferred_location_2 || 'None';
+                    document.getElementById('a-pref3').textContent = req.preferred_location_3 || 'None';
+                    document.getElementById('admin-remarks').value = req.remarks || '';
+
+                    // Render Documents
+                    const docsDiv = document.getElementById('admin-docs-list');
+                    if (data.documents && data.documents.length > 0) {
+                        docsDiv.innerHTML = `<ul style="list-style: none; padding: 0;">` +
+                            data.documents.map(d => `
+                                <li style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e2e8f0;">
+                                    <div>
+                                        <strong>📄 ${d.document_name}</strong> (${d.document_type})
+                                        <div style="font-size: 0.8rem; color: #64748b;">Status: ${renderStatusBadge(d.verification_status)}</div>
+                                    </div>
+                                    <div style="display: flex; gap: 0.5rem;">
+                                        <button onclick="verifyDoc(${d.document_id}, 'VERIFIED')" class="btn btn-success btn-sm">Verify</button>
+                                        <button onclick="verifyDoc(${d.document_id}, 'REJECTED')" class="btn btn-danger btn-sm">Reject</button>
+                                    </div>
+                                </li>
+                            `).join('') + `</ul>`;
+                    } else {
+                        docsDiv.innerHTML = '<p style="color: #64748b;">No documents uploaded for this application.</p>';
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function verifyDoc(docId, status) {
+            try {
+                const res = await fetch(API_BASE + 'document', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `action=verify&document_id=${docId}&verification_status=${status}`
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    showAlert('admin-review-alert', `Document marked as ${status}.`, 'success');
+                    loadDetails();
+                }
+            } catch (err) {
+                alert('Action failed.');
+            }
+        }
+
+        async function runOptimizationEngine() {
+            try {
+                const res = await fetch(API_BASE + 'optimization', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `action=verify_and_score&request_id=${requestId}`
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    showAlert('admin-review-alert', `Optimization Engine executed. Score: ${data.result.total_score}/100, Priority: ${data.result.priority}.`, 'success');
+                    loadDetails();
+                } else {
+                    showAlert('admin-review-alert', data.message || 'Scoring failed.', 'error');
+                }
+            } catch (err) {
+                showAlert('admin-review-alert', 'Connection error occurred.', 'error');
+            }
+        }
+
+        async function forwardToCommittee() {
+            const remarks = document.getElementById('admin-remarks').value.trim();
+            try {
+                const res = await fetch(API_BASE + 'optimization', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `action=forward_committee&request_id=${requestId}`
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    showAlert('admin-review-alert', 'Request forwarded to Transfer Committee successfully!', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'transfer-requests.html';
+                    }, 1200);
+                } else {
+                    showAlert('admin-review-alert', data.message || 'Action failed.', 'error');
+                }
+            } catch (err) {
+                showAlert('admin-review-alert', 'Connection error.', 'error');
+            }
+        }
+
+        async function rejectRequest() {
+            const remarks = document.getElementById('admin-remarks').value.trim();
+            if (!confirm('Are you sure you want to REJECT this transfer application?')) return;
+            try {
+                const res = await fetch(API_BASE + 'transfer-request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `action=update_status&request_id=${requestId}&status=REJECTED&remarks=${encodeURIComponent(remarks)}`
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    showAlert('admin-review-alert', 'Transfer request rejected.', 'warning');
+                    setTimeout(() => {
+                        window.location.href = 'transfer-requests.html';
+                    }, 1200);
+                }
+            } catch (err) {
+                alert('Action failed.');
+            }
+        }
+    </script>
+</body>
+</html>

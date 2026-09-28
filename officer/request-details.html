@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Details - Officer Portal</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+    <header class="top-nav">
+        <a href="dashboard.html" class="nav-brand">
+            <div class="emblem">CS</div>
+            <span>Officer Portal</span>
+        </a>
+        <div class="user-menu">
+            <div class="user-info">
+                <div class="user-name" id="nav-user-name">Loading...</div>
+                <div class="user-role-badge" id="nav-user-role">Officer</div>
+            </div>
+            <button onclick="handleLogout()" class="btn btn-outline btn-sm" style="color: white; border-color: rgba(255,255,255,0.3);">Logout</button>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-heading">Main Menu</div>
+            <ul class="sidebar-menu">
+                <li><a href="dashboard.html">📊 Dashboard</a></li>
+                <li><a href="profile.html">👤 My Profile</a></li>
+                <li><a href="transfer-request.html">📝 Submit Transfer Request</a></li>
+                <li><a href="my-requests.html" class="active">📑 My Requests</a></li>
+                <li><a href="orders.html">📜 Transfer Orders</a></li>
+                <li><a href="notifications.html">🔔 Notifications</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Transfer Request Dossier #<span id="req-id-header"></span></h1>
+                    <p class="page-subtitle">Detailed verification, score breakdown, and committee review</p>
+                </div>
+                <a href="my-requests.html" class="btn btn-outline">← Back to My Requests</a>
+            </div>
+
+            <!-- Score Summary Box -->
+            <div class="score-box">
+                <div class="score-main">
+                    <div class="score-number" id="score-num">0</div>
+                    <div class="score-meta">
+                        <div style="font-size: 1.1rem; font-weight: 700;">Optimization Score / 100</div>
+                        <div>Priority: <span id="score-priority-badge">LOW</span> | Status: <span id="score-status-badge">SUBMITTED</span></div>
+                    </div>
+                </div>
+                <div>
+                    Eligibility: <span id="score-eligibility-badge">PENDING</span>
+                </div>
+            </div>
+
+            <!-- Request Details Card -->
+            <div class="card" style="margin-bottom: 2rem;">
+                <h3 style="color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.75rem; margin-bottom: 1.25rem;">Application Particulars</h3>
+                
+                <div class="form-row">
+                    <div>
+                        <div style="font-size: 0.82rem; color: #64748b;">Officer Name</div>
+                        <strong id="d-officer-name"></strong>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.82rem; color: #64748b;">Employee ID</div>
+                        <strong id="d-emp-id"></strong>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.82rem; color: #64748b;">Current Posting</div>
+                        <strong id="d-current-posting"></strong>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.82rem; color: #64748b;">Service in Posting</div>
+                        <strong id="d-years"></strong>
+                    </div>
+                </div>
+
+                <div style="margin-top: 1.25rem;">
+                    <div style="font-size: 0.82rem; color: #64748b;">Transfer Grounds / Reasons</div>
+                    <p id="d-reason" style="background: #f8fafc; padding: 0.85rem; border-radius: 6px; border: 1px solid #e2e8f0; margin-top: 0.25rem; font-size: 0.92rem;"></p>
+                </div>
+
+                <div style="margin-top: 1.25rem;">
+                    <div style="font-size: 0.82rem; color: #64748b; margin-bottom: 0.5rem;">Location Preferences</div>
+                    <ol style="margin-left: 1.25rem; font-size: 0.92rem; color: #1e293b;">
+                        <li><strong>Pref 1:</strong> <span id="d-pref1"></span></li>
+                        <li><strong>Pref 2:</strong> <span id="d-pref2"></span></li>
+                        <li><strong>Pref 3:</strong> <span id="d-pref3"></span></li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- Uploaded Documents -->
+            <div class="card" style="margin-bottom: 2rem;">
+                <h3 style="color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.75rem; margin-bottom: 1.25rem;">Supporting Documents</h3>
+                <div id="docs-list">Loading documents...</div>
+            </div>
+
+            <!-- Committee Reviews -->
+            <div class="card">
+                <h3 style="color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.75rem; margin-bottom: 1.25rem;">Transfer Committee Reviews & Decision</h3>
+                <div id="reviews-list">No committee reviews submitted yet.</div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/script.js"></script>
+    <script>
+        let requestId = 0;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = await initSession(['CIVIL_SERVICE_OFFICER']);
+            if (!user) return;
+
+            const params = new URLSearchParams(window.location.search);
+            requestId = params.get('id');
+            if (!requestId) {
+                window.location.href = 'my-requests.html';
+                return;
+            }
+
+            document.getElementById('req-id-header').textContent = requestId;
+            loadRequestDetails();
+        });
+
+        async function loadRequestDetails() {
+            try {
+                const res = await fetch(API_BASE + 'transfer-request?action=get_details&request_id=' + requestId);
+                const data = await res.json();
+
+                if (data.status === 'success') {
+                    const req = data.request;
+
+                    document.getElementById('score-num').textContent = req.optimization_score;
+                    document.getElementById('score-priority-badge').innerHTML = renderPriorityBadge(req.priority);
+                    document.getElementById('score-status-badge').innerHTML = renderStatusBadge(req.status);
+                    document.getElementById('score-eligibility-badge').innerHTML = renderStatusBadge(req.eligibility_status);
+
+                    document.getElementById('d-officer-name').textContent = req.officer_name;
+                    document.getElementById('d-emp-id').textContent = req.employee_id;
+                    document.getElementById('d-current-posting').textContent = req.current_posting;
+                    document.getElementById('d-years').textContent = req.years_in_current_posting + ' Years';
+                    document.getElementById('d-reason').textContent = req.reason;
+
+                    document.getElementById('d-pref1').textContent = req.preferred_location_1 || 'None';
+                    document.getElementById('d-pref2').textContent = req.preferred_location_2 || 'None';
+                    document.getElementById('d-pref3').textContent = req.preferred_location_3 || 'None';
+
+                    // Documents
+                    const docsDiv = document.getElementById('docs-list');
+                    if (data.documents && data.documents.length > 0) {
+                        docsDiv.innerHTML = `<ul style="list-style: none; padding: 0;">` +
+                            data.documents.map(d => `
+                                <li style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e2e8f0;">
+                                    <div>
+                                        <strong>📄 ${d.document_name}</strong> (${d.document_type})
+                                    </div>
+                                    <div>
+                                        ${renderStatusBadge(d.verification_status)}
+                                    </div>
+                                </li>
+                            `).join('') + `</ul>`;
+                    } else {
+                        docsDiv.innerHTML = '<p style="color: #64748b;">No documents uploaded for this request.</p>';
+                    }
+
+                    // Reviews
+                    const revDiv = document.getElementById('reviews-list');
+                    if (data.reviews && data.reviews.length > 0) {
+                        revDiv.innerHTML = data.reviews.map(r => `
+                            <div style="background: #f8fafc; border-left: 4px solid #2563eb; padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    <strong>Reviewer: ${r.reviewer_name}</strong>
+                                    <span>Decision: ${renderStatusBadge(r.recommendation)}</span>
+                                </div>
+                                <p style="color: #475569; font-size: 0.9rem;">${r.remarks || 'No remarks provided.'}</p>
+                                <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 0.5rem;">Date: ${r.review_date}</div>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+    </script>
+</body>
+</html>

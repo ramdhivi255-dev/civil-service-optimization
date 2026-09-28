@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports & Analytics - Administrator Portal</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .tab-btn {
+            padding: 0.6rem 1.2rem;
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.88rem;
+            cursor: pointer;
+            color: #475569;
+            transition: all 0.2s;
+        }
+        .tab-btn.active, .tab-btn:hover {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="top-nav">
+        <a href="dashboard.html" class="nav-brand">
+            <div class="emblem">CS</div>
+            <span>Cadre Administrator Portal</span>
+        </a>
+        <div class="user-menu">
+            <div class="user-info">
+                <div class="user-name" id="nav-user-name">Loading...</div>
+                <div class="user-role-badge" id="nav-user-role">Administrator</div>
+            </div>
+            <button onclick="handleLogout()" class="btn btn-outline btn-sm" style="color: white; border-color: rgba(255,255,255,0.3);">Logout</button>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-heading">Admin Management</div>
+            <ul class="sidebar-menu">
+                <li><a href="dashboard.html">📊 Dashboard</a></li>
+                <li><a href="officers.html">👥 Officers Registry</a></li>
+                <li><a href="vacancies.html">🏢 Vacancy Management</a></li>
+                <li><a href="policies.html">📜 Transfer Policies</a></li>
+                <li><a href="transfer-requests.html">📑 Transfer Requests</a></li>
+                <li><a href="orders.html">📋 Transfer Orders</a></li>
+                <li><a href="reports.html" class="active">📈 Reports & Analytics</a></li>
+                <li><a href="notifications.html">🔔 Notifications</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Administrative Reports & Analytics</h1>
+                    <p class="page-subtitle">Generate system analytics, print official ledgers, and export CSV data</p>
+                </div>
+                <div style="display: flex; gap: 0.75rem;">
+                    <button onclick="window.print()" class="btn btn-outline">🖨️ Print Report</button>
+                    <button onclick="exportCurrentReport()" class="btn btn-success">📥 Export CSV Data</button>
+                </div>
+            </div>
+
+            <!-- Report Type Tabs -->
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+                <button class="tab-btn active" onclick="switchReport('requests', this)">Transfer Requests Report</button>
+                <button class="tab-btn" onclick="switchReport('officers', this)">Officers Service Report</button>
+                <button class="tab-btn" onclick="switchReport('vacancies', this)">Vacancies Ledger</button>
+                <button class="tab-btn" onclick="switchReport('orders', this)">Transfer Orders Report</button>
+            </div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <h3 class="table-title" id="report-title">Transfer Requests Report</h3>
+                </div>
+                <table id="report-table">
+                    <thead id="report-thead">
+                        <!-- Dynamic headers -->
+                    </thead>
+                    <tbody id="report-tbody">
+                        <tr><td style="text-align: center; color: #64748b;">Loading report data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/script.js"></script>
+    <script>
+        let currentReportType = 'requests';
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = await initSession(['CADRE_ADMINISTRATOR', 'TRANSFER_COMMITTEE_MEMBER']);
+            if (!user) return;
+            loadReport('requests');
+        });
+
+        function switchReport(type, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentReportType = type;
+            loadReport(type);
+        }
+
+        async function loadReport(type) {
+            const thead = document.getElementById('report-thead');
+            const tbody = document.getElementById('report-tbody');
+            const title = document.getElementById('report-title');
+
+            try {
+                const res = await fetch(API_BASE + `report?type=${type}`);
+                const data = await res.json();
+
+                if (data.status === 'success' && data.data) {
+                    if (type === 'officers') {
+                        title.textContent = 'Civil Services Officers Service Report';
+                        thead.innerHTML = `
+                            <tr>
+                                <th>ID</th>
+                                <th>Employee ID</th>
+                                <th>Officer Name</th>
+                                <th>Designation / Cadre</th>
+                                <th>Current Posting</th>
+                                <th>Service Period</th>
+                                <th>Status</th>
+                            </tr>
+                        `;
+                        tbody.innerHTML = data.data.map(o => `
+                            <tr>
+                                <td>#${o.officer_id}</td>
+                                <td>${o.employee_id}</td>
+                                <td><strong>${o.name}</strong></td>
+                                <td>${o.designation} (${o.cadre})</td>
+                                <td>${o.current_posting} (${o.current_district})</td>
+                                <td><strong>${o.years_in_current_posting} Years</strong></td>
+                                <td>${renderStatusBadge(o.status)}</td>
+                            </tr>
+                        `).join('');
+
+                    } else if (type === 'vacancies') {
+                        title.textContent = 'District Vacancies Ledger';
+                        thead.innerHTML = `
+                            <tr>
+                                <th>ID</th>
+                                <th>Location / Office</th>
+                                <th>District</th>
+                                <th>Department</th>
+                                <th>Designation / Cadre</th>
+                                <th>Available Positions</th>
+                                <th>Status</th>
+                            </tr>
+                        `;
+                        tbody.innerHTML = data.data.map(v => `
+                            <tr>
+                                <td>#${v.vacancy_id}</td>
+                                <td><strong>${v.location}</strong></td>
+                                <td>${v.district}</td>
+                                <td>${v.department}</td>
+                                <td>${v.designation} (${v.cadre})</td>
+                                <td><strong style="color: #2563eb;">${v.available_positions} Seats</strong></td>
+                                <td>${renderStatusBadge(v.status)}</td>
+                            </tr>
+                        `).join('');
+
+                    } else if (type === 'orders') {
+                        title.textContent = 'Government Transfer Orders Report';
+                        thead.innerHTML = `
+                            <tr>
+                                <th>ID</th>
+                                <th>Order Number</th>
+                                <th>Officer Name</th>
+                                <th>Employee ID</th>
+                                <th>Previous Posting</th>
+                                <th>New Posting</th>
+                                <th>Joining Date</th>
+                                <th>Status</th>
+                            </tr>
+                        `;
+                        tbody.innerHTML = data.data.map(ord => `
+                            <tr>
+                                <td>#${ord.order_id}</td>
+                                <td><strong style="color: #2563eb;">${ord.order_number}</strong></td>
+                                <td><strong>${ord.officer_name}</strong></td>
+                                <td>${ord.employee_id}</td>
+                                <td>${ord.old_location}</td>
+                                <td><strong>${ord.new_location}</strong></td>
+                                <td>${ord.joining_date}</td>
+                                <td>${renderStatusBadge(ord.status)}</td>
+                            </tr>
+                        `).join('');
+
+                    } else {
+                        // Requests
+                        title.textContent = 'Transfer Applications & Optimization Report';
+                        thead.innerHTML = `
+                            <tr>
+                                <th>Req ID</th>
+                                <th>Officer Name</th>
+                                <th>Employee ID</th>
+                                <th>Current Posting</th>
+                                <th>Target Location</th>
+                                <th>Eligibility</th>
+                                <th>Optimization Score</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                            </tr>
+                        `;
+                        tbody.innerHTML = data.data.map(r => `
+                            <tr>
+                                <td>#${r.request_id}</td>
+                                <td><strong>${r.officer_name}</strong></td>
+                                <td>${r.employee_id}</td>
+                                <td>${r.current_posting}</td>
+                                <td>${r.preferred_location_1}</td>
+                                <td>${renderStatusBadge(r.eligibility_status)}</td>
+                                <td><strong style="color: #2563eb;">${r.optimization_score} / 100</strong></td>
+                                <td>${renderPriorityBadge(r.priority)}</td>
+                                <td>${renderStatusBadge(r.status)}</td>
+                            </tr>
+                        `).join('');
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function exportCurrentReport() {
+            downloadCSV(`report?type=${currentReportType}`);
+        }
+    </script>
+</body>
+</html>

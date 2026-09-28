@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transfer Orders Ledger - Administrator Portal</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+    <header class="top-nav">
+        <a href="dashboard.html" class="nav-brand">
+            <div class="emblem">CS</div>
+            <span>Cadre Administrator Portal</span>
+        </a>
+        <div class="user-menu">
+            <div class="user-info">
+                <div class="user-name" id="nav-user-name">Loading...</div>
+                <div class="user-role-badge" id="nav-user-role">Administrator</div>
+            </div>
+            <button onclick="handleLogout()" class="btn btn-outline btn-sm" style="color: white; border-color: rgba(255,255,255,0.3);">Logout</button>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-heading">Admin Management</div>
+            <ul class="sidebar-menu">
+                <li><a href="dashboard.html">📊 Dashboard</a></li>
+                <li><a href="officers.html">👥 Officers Registry</a></li>
+                <li><a href="vacancies.html">🏢 Vacancy Management</a></li>
+                <li><a href="policies.html">📜 Transfer Policies</a></li>
+                <li><a href="transfer-requests.html">📑 Transfer Requests</a></li>
+                <li><a href="orders.html" class="active">📋 Transfer Orders</a></li>
+                <li><a href="reports.html">📈 Reports & Analytics</a></li>
+                <li><a href="notifications.html">🔔 Notifications</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Government Transfer Orders Ledger</h1>
+                    <p class="page-subtitle">Track issued transfer orders, officer acknowledgements, and joining completions</p>
+                </div>
+                <button onclick="downloadCSV('report?type=orders')" class="btn btn-outline">📥 Export Orders CSV</button>
+            </div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <h3 class="table-title">Issued Transfer Orders</h3>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Order Number</th>
+                            <th>Officer Name</th>
+                            <th>Designation</th>
+                            <th>Previous Location</th>
+                            <th>New Posting Location</th>
+                            <th>Joining Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-orders-tbody">
+                        <tr><td colspan="8" style="text-align: center; color: #64748b;">Loading transfer orders...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = await initSession(['CADRE_ADMINISTRATOR']);
+            if (!user) return;
+            loadAdminOrders();
+        });
+
+        async function loadAdminOrders() {
+            try {
+                const res = await fetch(API_BASE + 'transfer-order?action=list');
+                const data = await res.json();
+                const tbody = document.getElementById('admin-orders-tbody');
+
+                if (data.status === 'success' && data.orders.length > 0) {
+                    tbody.innerHTML = '';
+                    data.orders.forEach(o => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>#${o.order_id}</td>
+                            <td><strong style="color: #2563eb;">${o.order_number}</strong></td>
+                            <td><strong>${o.officer_name}</strong><br><small style="color: #64748b;">${o.employee_id}</small></td>
+                            <td>${o.designation}</td>
+                            <td>${o.old_location}</td>
+                            <td><strong style="color: #0f172a;">${o.new_location}</strong></td>
+                            <td>${o.joining_date}</td>
+                            <td>${renderStatusBadge(o.status)}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #64748b;">No transfer orders found.</td></tr>`;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+    </script>
+</body>
+</html>

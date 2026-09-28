@@ -1,0 +1,36 @@
+# Dockerfile.vercel — Tomcat 9 Java Servlet Container Deployment Configuration
+
+FROM tomcat:9.0-jdk11-openjdk-slim AS builder
+
+WORKDIR /app
+
+# Copy project files
+COPY . .
+
+# Ensure WEB-INF/classes directory exists
+RUN mkdir -p WEB-INF/classes
+
+# Compile Java Servlets using Tomcat's servlet-api.jar and WEB-INF/lib dependencies
+RUN javac -encoding UTF-8 -cp "/usr/local/tomcat/lib/servlet-api.jar:WEB-INF/lib/*" -d WEB-INF/classes src/com/example/*.java
+
+# Runtime Stage
+FROM tomcat:9.0-jdk11-openjdk-slim
+
+WORKDIR /usr/local/tomcat
+
+# Remove default ROOT application
+RUN rm -rf webapps/*
+
+# Deploy compiled application to ROOT
+COPY --from=builder /app /usr/local/tomcat/webapps/ROOT
+
+# Entrypoint script to handle dynamic $PORT binding from Vercel / Container platform
+RUN echo '#!/bin/sh' > /usr/local/tomcat/bin/start-tomcat.sh && \
+    echo 'PORT=${PORT:-8080}' >> /usr/local/tomcat/bin/start-tomcat.sh && \
+    echo 'sed -i "s/port=\"8080\"/port=\"$PORT\"/g" /usr/local/tomcat/conf/server.xml' >> /usr/local/tomcat/bin/start-tomcat.sh && \
+    echo 'exec catalina.sh run' >> /usr/local/tomcat/bin/start-tomcat.sh && \
+    chmod +x /usr/local/tomcat/bin/start-tomcat.sh
+
+EXPOSE 8080
+
+CMD ["/usr/local/tomcat/bin/start-tomcat.sh"]

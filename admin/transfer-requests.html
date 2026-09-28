@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transfer Requests Center - Administrator Portal</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+    <header class="top-nav">
+        <a href="dashboard.html" class="nav-brand">
+            <div class="emblem">CS</div>
+            <span>Cadre Administrator Portal</span>
+        </a>
+        <div class="user-menu">
+            <div class="user-info">
+                <div class="user-name" id="nav-user-name">Loading...</div>
+                <div class="user-role-badge" id="nav-user-role">Administrator</div>
+            </div>
+            <button onclick="handleLogout()" class="btn btn-outline btn-sm" style="color: white; border-color: rgba(255,255,255,0.3);">Logout</button>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-heading">Admin Management</div>
+            <ul class="sidebar-menu">
+                <li><a href="dashboard.html">📊 Dashboard</a></li>
+                <li><a href="officers.html">👥 Officers Registry</a></li>
+                <li><a href="vacancies.html">🏢 Vacancy Management</a></li>
+                <li><a href="policies.html">📜 Transfer Policies</a></li>
+                <li><a href="transfer-requests.html" class="active">📑 Transfer Requests</a></li>
+                <li><a href="orders.html">📋 Transfer Orders</a></li>
+                <li><a href="reports.html">📈 Reports & Analytics</a></li>
+                <li><a href="notifications.html">🔔 Notifications</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Transfer Request Verification Center</h1>
+                    <p class="page-subtitle">Verify documents, run optimization scoring engine, and forward eligible applications to committee</p>
+                </div>
+            </div>
+
+            <div id="requests-alert"></div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <h3 class="table-title">Submitted Applications Ledger</h3>
+                    <div class="table-actions">
+                        <input type="text" id="req-search" class="form-control" placeholder="Search officer / location..." style="width: 220px;" onkeyup="loadRequests()">
+                        <select id="status-filter" class="form-control" style="width: 160px;" onchange="loadRequests()">
+                            <option value="">All Statuses</option>
+                            <option value="SUBMITTED">SUBMITTED</option>
+                            <option value="VERIFIED">VERIFIED</option>
+                            <option value="COMMITTEE_REVIEW">COMMITTEE_REVIEW</option>
+                            <option value="APPROVED">APPROVED</option>
+                            <option value="REJECTED">REJECTED</option>
+                            <option value="ORDER_GENERATED">ORDER_GENERATED</option>
+                            <option value="COMPLETED">COMPLETED</option>
+                        </select>
+                        <select id="priority-filter" class="form-control" style="width: 140px;" onchange="loadRequests()">
+                            <option value="">All Priorities</option>
+                            <option value="HIGH">HIGH Priority</option>
+                            <option value="MEDIUM">MEDIUM Priority</option>
+                            <option value="LOW">LOW Priority</option>
+                        </select>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Req ID</th>
+                            <th>Officer Name</th>
+                            <th>Current Posting</th>
+                            <th>Target Preference</th>
+                            <th>Eligibility</th>
+                            <th>Score</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="requests-tbody">
+                        <tr><td colspan="9" style="text-align: center; color: #64748b;">Loading requests...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = await initSession(['CADRE_ADMINISTRATOR']);
+            if (!user) return;
+            loadRequests();
+        });
+
+        async function loadRequests() {
+            const search = document.getElementById('req-search').value.trim();
+            const status = document.getElementById('status-filter').value;
+            const priority = document.getElementById('priority-filter').value;
+
+            try {
+                const res = await fetch(API_BASE + `transfer-request?action=list_all&search=${encodeURIComponent(search)}&status=${encodeURIComponent(status)}&priority=${encodeURIComponent(priority)}`);
+                const data = await res.json();
+                const tbody = document.getElementById('requests-tbody');
+
+                if (data.status === 'success' && data.requests.length > 0) {
+                    tbody.innerHTML = '';
+                    data.requests.forEach(r => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td><strong>#${r.request_id}</strong></td>
+                            <td><strong>${r.officer_name}</strong><br><small style="color: #64748b;">${r.employee_id}</small></td>
+                            <td>${r.current_posting} (${r.years_in_current_posting} yrs)</td>
+                            <td>${r.preferred_location_1}</td>
+                            <td>${renderStatusBadge(r.eligibility_status)}</td>
+                            <td><strong style="color: #2563eb; font-size: 1.05rem;">${r.optimization_score} / 100</strong></td>
+                            <td>${renderPriorityBadge(r.priority)}</td>
+                            <td>${renderStatusBadge(r.status)}</td>
+                            <td>
+                                <a href="review.html?id=${r.request_id}" class="btn btn-primary btn-sm">Inspect & Score</a>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #64748b;">No transfer requests found matching filter criteria.</td></tr>`;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+    </script>
+</body>
+</html>

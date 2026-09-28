@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transfer Policies - Administrator Portal</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+    <header class="top-nav">
+        <a href="dashboard.html" class="nav-brand">
+            <div class="emblem">CS</div>
+            <span>Cadre Administrator Portal</span>
+        </a>
+        <div class="user-menu">
+            <div class="user-info">
+                <div class="user-name" id="nav-user-name">Loading...</div>
+                <div class="user-role-badge" id="nav-user-role">Administrator</div>
+            </div>
+            <button onclick="handleLogout()" class="btn btn-outline btn-sm" style="color: white; border-color: rgba(255,255,255,0.3);">Logout</button>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-heading">Admin Management</div>
+            <ul class="sidebar-menu">
+                <li><a href="dashboard.html">📊 Dashboard</a></li>
+                <li><a href="officers.html">👥 Officers Registry</a></li>
+                <li><a href="vacancies.html">🏢 Vacancy Management</a></li>
+                <li><a href="policies.html" class="active">📜 Transfer Policies</a></li>
+                <li><a href="transfer-requests.html">📑 Transfer Requests</a></li>
+                <li><a href="orders.html">📋 Transfer Orders</a></li>
+                <li><a href="reports.html">📈 Reports & Analytics</a></li>
+                <li><a href="notifications.html">🔔 Notifications</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Civil Services Transfer Policies</h1>
+                    <p class="page-subtitle">Configure minimum service tenure, priority criteria, and transfer guidelines</p>
+                </div>
+                <button onclick="openModal('add-policy-modal')" class="btn btn-primary">➕ Create New Policy</button>
+            </div>
+
+            <div id="policy-alert"></div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <h3 class="table-title">Active Government Policies</h3>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Policy ID</th>
+                            <th>Policy Name</th>
+                            <th>Description</th>
+                            <th>Min Service Tenure</th>
+                            <th>Priority Rules</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="policies-tbody">
+                        <tr><td colspan="7" style="text-align: center; color: #64748b;">Loading policies...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Policy Modal -->
+    <div class="modal-overlay" id="add-policy-modal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 class="modal-title">Define New Transfer Policy</h3>
+                <button class="modal-close" onclick="closeModal('add-policy-modal')">&times;</button>
+            </div>
+            <form id="add-policy-form" onsubmit="submitAddPolicy(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label" for="pol-name">Policy Name *</label>
+                        <input type="text" id="pol-name" class="form-control" required placeholder="e.g. Spouse Co-location Policy 2026">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="pol-desc">Description</label>
+                        <textarea id="pol-desc" class="form-control" rows="2" placeholder="Policy guidelines and eligibility criteria..."></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="pol-min-years">Minimum Service Period (Years) *</label>
+                            <input type="number" id="pol-min-years" class="form-control" value="3" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="pol-max-freq">Max Frequency (Per Decade)</label>
+                            <input type="number" id="pol-max-freq" class="form-control" value="1" min="1">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="pol-rules">Priority Rules</label>
+                        <input type="text" id="pol-rules" class="form-control" placeholder="e.g. Mandatory document verification required">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('add-policy-modal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Policy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../js/script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = await initSession(['CADRE_ADMINISTRATOR']);
+            if (!user) return;
+            loadPolicies();
+        });
+
+        async function loadPolicies() {
+            try {
+                const res = await fetch(API_BASE + 'policy');
+                const data = await res.json();
+                const tbody = document.getElementById('policies-tbody');
+
+                if (data.status === 'success' && data.policies.length > 0) {
+                    tbody.innerHTML = '';
+                    data.policies.forEach(p => {
+                        const tr = document.createElement('tr');
+                        const isAct = p.status === 'ACTIVE';
+                        tr.innerHTML = `
+                            <td>#${p.policy_id}</td>
+                            <td><strong>${p.policy_name}</strong></td>
+                            <td style="max-width: 250px;">${p.description || ''}</td>
+                            <td><strong style="color: #2563eb;">${p.minimum_service_years} Years</strong></td>
+                            <td>${p.priority_rules || 'Standard'}</td>
+                            <td>${renderStatusBadge(p.status)}</td>
+                            <td>
+                                <button onclick="togglePolicyStatus(${p.policy_id}, '${isAct ? 'INACTIVE' : 'ACTIVE'}')" class="btn ${isAct ? 'btn-danger' : 'btn-success'} btn-sm">
+                                    ${isAct ? 'Deactivate' : 'Activate'}
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #64748b;">No transfer policy records found.</td></tr>`;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function submitAddPolicy(e) {
+            e.preventDefault();
+            const name = document.getElementById('pol-name').value.trim();
+            const desc = document.getElementById('pol-desc').value.trim();
+            const minYears = document.getElementById('pol-min-years').value;
+            const maxFreq = document.getElementById('pol-max-freq').value;
+            const rules = document.getElementById('pol-rules').value.trim();
+
+            try {
+                const res = await fetch(API_BASE + 'policy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `action=add&policy_name=${encodeURIComponent(name)}&description=${encodeURIComponent(desc)}&minimum_service_years=${encodeURIComponent(minYears)}&maximum_transfer_frequency=${encodeURIComponent(maxFreq)}&priority_rules=${encodeURIComponent(rules)}`
+                });
+
+                const data = await res.json();
+                if (data.status === 'success') {
+                    closeModal('add-policy-modal');
+                    showAlert('policy-alert', 'Transfer policy created successfully.', 'success');
+                    loadPolicies();
+                } else {
+                    alert(data.message || 'Failed to create policy.');
+                }
+            } catch (err) {
+                alert('Connection error occurred.');
+            }
+        }
+
+        async function togglePolicyStatus(pId, newStatus) {
+            try {
+                const res = await fetch(API_BASE + 'policy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `action=toggle_status&policy_id=${pId}&status=${newStatus}`
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    showAlert('policy-alert', `Policy status updated to ${newStatus}.`, 'success');
+                    loadPolicies();
+                }
+            } catch (err) {
+                alert('Action failed.');
+            }
+        }
+    </script>
+</body>
+</html>

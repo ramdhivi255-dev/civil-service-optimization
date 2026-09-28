@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Transfer Request - Officer Portal</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+    <header class="top-nav">
+        <a href="dashboard.html" class="nav-brand">
+            <div class="emblem">CS</div>
+            <span>Officer Portal</span>
+        </a>
+        <div class="user-menu">
+            <div class="user-info">
+                <div class="user-name" id="nav-user-name">Loading...</div>
+                <div class="user-role-badge" id="nav-user-role">Officer</div>
+            </div>
+            <button onclick="handleLogout()" class="btn btn-outline btn-sm" style="color: white; border-color: rgba(255,255,255,0.3);">Logout</button>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-heading">Main Menu</div>
+            <ul class="sidebar-menu">
+                <li><a href="dashboard.html">📊 Dashboard</a></li>
+                <li><a href="profile.html">👤 My Profile</a></li>
+                <li><a href="transfer-request.html" class="active">📝 Submit Transfer Request</a></li>
+                <li><a href="my-requests.html">📑 My Requests</a></li>
+                <li><a href="orders.html">📜 Transfer Orders</a></li>
+                <li><a href="notifications.html">🔔 Notifications</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Submit Transfer Application</h1>
+                    <p class="page-subtitle">File an official transfer request with location preferences and supporting documents</p>
+                </div>
+            </div>
+
+            <div id="request-alert"></div>
+
+            <div class="card" style="max-width: 850px; margin-bottom: 2rem;">
+                <h3 style="color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.75rem; margin-bottom: 1.5rem;">Transfer Application Form</h3>
+
+                <form id="transfer-form" onsubmit="submitTransferForm(event)">
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="reason">Primary Reason for Transfer Request *</label>
+                        <textarea id="reason" class="form-control" rows="3" placeholder="Provide detailed administrative or personal grounds (e.g., Medical grounds, Spouse employment co-location, Family care in Chennai)..." required></textarea>
+                    </div>
+
+                    <h4 style="color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; margin: 1.5rem 0 1rem 0;">Location Preferences (In Order of Priority)</h4>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="pref1">Preferred Location 1 (Highest Priority) *</label>
+                            <input type="text" id="pref1" class="form-control" placeholder="e.g. Chennai Secretariat" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="pref2">Preferred Location 2</label>
+                            <input type="text" id="pref2" class="form-control" placeholder="e.g. Coimbatore Civil Station">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="pref3">Preferred Location 3</label>
+                            <input type="text" id="pref3" class="form-control" placeholder="e.g. Salem Head Office">
+                        </div>
+                    </div>
+
+                    <h4 style="color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; margin: 1.5rem 0 1rem 0;">Supporting Document Upload</h4>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="doc-type">Document Classification</label>
+                            <select id="doc-type" class="form-control">
+                                <option value="Medical">Medical Document / Certificate</option>
+                                <option value="Spouse">Spouse Employment Certificate</option>
+                                <option value="Administrative">Administrative Order / Representation</option>
+                                <option value="Personal">Personal Representation Letter</option>
+                                <option value="Other">Other Supporting Document</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="doc-file">Attach File (PDF, PNG, JPG)</label>
+                            <input type="file" id="doc-file" class="form-control" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx">
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                        <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2rem;">Submit Transfer Application</button>
+                        <a href="dashboard.html" class="btn btn-outline">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initSession(['CIVIL_SERVICE_OFFICER']);
+        });
+
+        async function submitTransferForm(e) {
+            e.preventDefault();
+            const reason = document.getElementById('reason').value.trim();
+            const pref1 = document.getElementById('pref1').value.trim();
+            const pref2 = document.getElementById('pref2').value.trim();
+            const pref3 = document.getElementById('pref3').value.trim();
+
+            const docType = document.getElementById('doc-type').value;
+            const fileInput = document.getElementById('doc-file');
+
+            try {
+                const res = await fetch(API_BASE + 'transfer-request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `action=create&reason=${encodeURIComponent(reason)}&preferred_location_1=${encodeURIComponent(pref1)}&preferred_location_2=${encodeURIComponent(pref2)}&preferred_location_3=${encodeURIComponent(pref3)}`
+                });
+
+                const data = await res.json();
+
+                if (data.status === 'success') {
+                    const requestId = data.request_id;
+
+                    // If file attached, upload document
+                    if (fileInput.files.length > 0) {
+                        const formData = new FormData();
+                        formData.append('action', 'upload');
+                        formData.append('request_id', requestId);
+                        formData.append('document_type', docType);
+                        formData.append('file', fileInput.files[0]);
+
+                        await fetch(API_BASE + 'document', {
+                            method: 'POST',
+                            body: formData
+                        });
+                    }
+
+                    showAlert('request-alert', 'Transfer request submitted successfully. Status: SUBMITTED.', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'my-requests.html';
+                    }, 1200);
+                } else {
+                    showAlert('request-alert', data.message || 'Submission failed.', 'error');
+                }
+            } catch (err) {
+                showAlert('request-alert', 'Connection error occurred.', 'error');
+            }
+        }
+    </script>
+</body>
+</html>

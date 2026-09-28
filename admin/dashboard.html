@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administrator Dashboard - Civil Services Transfer System</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+    <header class="top-nav">
+        <a href="dashboard.html" class="nav-brand">
+            <div class="emblem">CS</div>
+            <span>Cadre Administrator Portal</span>
+        </a>
+        <div class="user-menu">
+            <div class="user-info">
+                <div class="user-name" id="nav-user-name">Loading...</div>
+                <div class="user-role-badge" id="nav-user-role">Administrator</div>
+            </div>
+            <button onclick="handleLogout()" class="btn btn-outline btn-sm" style="color: white; border-color: rgba(255,255,255,0.3);">Logout</button>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-heading">Admin Management</div>
+            <ul class="sidebar-menu">
+                <li><a href="dashboard.html" class="active">📊 Dashboard</a></li>
+                <li><a href="officers.html">👥 Officers Registry</a></li>
+                <li><a href="vacancies.html">🏢 Vacancy Management</a></li>
+                <li><a href="policies.html">📜 Transfer Policies</a></li>
+                <li><a href="transfer-requests.html">📑 Transfer Requests</a></li>
+                <li><a href="orders.html">📋 Transfer Orders</a></li>
+                <li><a href="reports.html">📈 Reports & Analytics</a></li>
+                <li><a href="notifications.html">🔔 Notifications</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <div>
+                    <h1 class="page-title">Cadre Administration Control Center</h1>
+                    <p class="page-subtitle">Centralized officer transfer verification, vacancy monitoring, and governance dashboard</p>
+                </div>
+                <div style="display: flex; gap: 0.75rem;">
+                    <a href="transfer-requests.html" class="btn btn-primary">Verify Requests</a>
+                    <a href="reports.html" class="btn btn-outline">Generate Reports</a>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid-cards">
+                <div class="card stat-card">
+                    <div>
+                        <div class="stat-title">Total Active Officers</div>
+                        <div class="stat-value" id="stat-officers">0</div>
+                    </div>
+                    <div class="stat-icon icon-blue">👥</div>
+                </div>
+
+                <div class="card stat-card">
+                    <div>
+                        <div class="stat-title">Total Requests</div>
+                        <div class="stat-value" id="stat-requests">0</div>
+                    </div>
+                    <div class="stat-icon icon-purple">📑</div>
+                </div>
+
+                <div class="card stat-card">
+                    <div>
+                        <div class="stat-title">Pending Verification</div>
+                        <div class="stat-value" id="stat-pending">0</div>
+                    </div>
+                    <div class="stat-icon icon-amber">⏳</div>
+                </div>
+
+                <div class="card stat-card">
+                    <div>
+                        <div class="stat-title">In Committee Review</div>
+                        <div class="stat-value" id="stat-committee">0</div>
+                    </div>
+                    <div class="stat-icon icon-blue">🏛️</div>
+                </div>
+
+                <div class="card stat-card">
+                    <div>
+                        <div class="stat-title">Approved Requests</div>
+                        <div class="stat-value" id="stat-approved">0</div>
+                    </div>
+                    <div class="stat-icon icon-green">✅</div>
+                </div>
+
+                <div class="card stat-card">
+                    <div>
+                        <div class="stat-title">Available Vacancies</div>
+                        <div class="stat-value" id="stat-vacancies">0</div>
+                    </div>
+                    <div class="stat-icon icon-green">🏢</div>
+                </div>
+            </div>
+
+            <!-- Requests Awaiting Verification -->
+            <div class="table-container">
+                <div class="table-header">
+                    <h3 class="table-title">Transfer Requests Pending Administrator Action</h3>
+                    <a href="transfer-requests.html" class="btn btn-outline btn-sm">Manage All Requests</a>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Req ID</th>
+                            <th>Officer Name</th>
+                            <th>Current Posting</th>
+                            <th>Preferred Location</th>
+                            <th>Eligibility</th>
+                            <th>Score</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-pending-tbody">
+                        <tr><td colspan="9" style="text-align: center; color: #64748b;">Loading pending requests...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = await initSession(['CADRE_ADMINISTRATOR']);
+            if (!user) return;
+
+            loadMetrics();
+            loadPendingRequests();
+        });
+
+        async function loadMetrics() {
+            try {
+                const res = await fetch(API_BASE + 'dashboard');
+                const result = await res.json();
+                if (result.status === 'success') {
+                    const d = result.data;
+                    document.getElementById('stat-officers').textContent = d.total_officers || 0;
+                    document.getElementById('stat-requests').textContent = d.total_requests || 0;
+                    document.getElementById('stat-pending').textContent = d.pending_requests || 0;
+                    document.getElementById('stat-committee').textContent = d.committee_requests || 0;
+                    document.getElementById('stat-approved').textContent = d.approved_requests || 0;
+                    document.getElementById('stat-vacancies').textContent = d.available_vacancies || 0;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function loadPendingRequests() {
+            try {
+                const res = await fetch(API_BASE + 'transfer-request?action=list_all&status=SUBMITTED');
+                const data = await res.json();
+                const tbody = document.getElementById('admin-pending-tbody');
+
+                if (data.status === 'success' && data.requests.length > 0) {
+                    tbody.innerHTML = '';
+                    data.requests.forEach(req => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td><strong>#${req.request_id}</strong></td>
+                            <td><strong>${req.officer_name}</strong> <br><small style="color: #64748b;">${req.employee_id}</small></td>
+                            <td>${req.current_posting} (${req.years_in_current_posting} yrs)</td>
+                            <td>${req.preferred_location_1}</td>
+                            <td>${renderStatusBadge(req.eligibility_status)}</td>
+                            <td><strong style="color: #2563eb;">${req.optimization_score} / 100</strong></td>
+                            <td>${renderPriorityBadge(req.priority)}</td>
+                            <td>${renderStatusBadge(req.status)}</td>
+                            <td><a href="review.html?id=${req.request_id}" class="btn btn-primary btn-sm">Verify & Score</a></td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #64748b;">No pending transfer requests requiring immediate verification.</td></tr>`;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+# Compiled Java class files
+*.class
+WEB-INF/classes/*
+!WEB-INF/classes/.gitkeep
+
+# Package Files
+*.war
+*.ear
+*.zip
+*.tar.gz
+
+# Environment variables & secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+*.key
+
+# IDE temporary files & workspace configuration
+.idea/
+*.iml
+.vscode/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# Tomcat / Server logs & temp files
+logs/
+*.log
+work/
+temp/
+target/
+
+# OS metadata
+[Dd]esktop.ini
