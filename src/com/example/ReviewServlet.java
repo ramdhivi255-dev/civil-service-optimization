@@ -12,7 +12,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-@WebServlet({"/api/review", "/review"})
+@WebServlet("/api/review")
 public class ReviewServlet extends HttpServlet {
 
     @Override

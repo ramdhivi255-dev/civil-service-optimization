@@ -12,7 +12,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-@WebServlet({"/api/policy", "/policy"})
+@WebServlet("/api/policy")
 public class PolicyServlet extends HttpServlet {
 
     @Override

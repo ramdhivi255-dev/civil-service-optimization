@@ -12,7 +12,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-@WebServlet({"/api/document", "/document"})
+@WebServlet("/api/document")
 public class DocumentServlet extends HttpServlet {
 
     @Override

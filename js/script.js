@@ -13,7 +13,7 @@ let currentUser = null;
 // Enforce Session & Role-Based Authorization
 async function initSession(allowedRoles = []) {
     try {
-        const response = await fetch(API_BASE + '../login');
+        const response = await fetch(API_BASE + 'auth/status');
         if (!response.ok) {
             throw new Error('Servlet backend unavailable (HTTP ' + response.status + ')');
         }
@@ -99,7 +99,7 @@ function formatRole(role) {
 // Global Logout Action
 async function handleLogout() {
     try {
-        const response = await fetch(API_BASE + '../logout', { method: 'POST' });
+        const response = await fetch(API_BASE + 'logout', { method: 'POST' });
         window.location.href = (API_BASE.includes('../') ? '../' : '') + 'login.html';
     } catch (err) {
         window.location.href = (API_BASE.includes('../') ? '../' : '') + 'login.html';

@@ -12,7 +12,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-@WebServlet({"/api/notification", "/notification"})
+@WebServlet("/api/notification")
 public class NotificationServlet extends HttpServlet {
 
     @Override

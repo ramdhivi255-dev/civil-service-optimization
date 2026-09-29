@@ -13,7 +13,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
-@WebServlet({"/api/officer", "/officer"})
+@WebServlet("/api/officer")
 public class OfficerServlet extends HttpServlet {
 
     @Override

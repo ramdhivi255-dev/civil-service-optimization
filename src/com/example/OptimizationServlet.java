@@ -12,7 +12,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-@WebServlet({"/api/optimization", "/optimization"})
+@WebServlet("/api/optimization")
 public class OptimizationServlet extends HttpServlet {
 
     public static class OptimizationResult {

@@ -36,3 +36,5 @@ target/
 
 # OS metadata
 [Dd]esktop.ini
+
+.vercel
