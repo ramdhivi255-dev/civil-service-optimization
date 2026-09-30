@@ -162,6 +162,10 @@ public class TransferOrderServlet extends HttpServlet {
                         psN.executeUpdate();
                     }
 
+                    int userId = (Integer) session.getAttribute("user_id");
+                    String role = (String) session.getAttribute("role");
+                    DBConnection.logAudit(conn, userId, role, "GENERATE_ORDER", "transfer_orders", reqId, "Generated Transfer Order #" + orderNum + " for Request #" + reqId);
+
                     conn.commit();
                     out.print("{\"status\":\"success\",\"message\":\"Transfer Order generated successfully\",\"order_number\":\"" + orderNum + "\"}");
                 } catch (Exception ex) {
@@ -177,13 +181,42 @@ public class TransferOrderServlet extends HttpServlet {
                     return;
                 }
                 int orderId = Integer.parseInt(orderIdStr);
+                int userId = (Integer) session.getAttribute("user_id");
+                String role = (String) session.getAttribute("role");
 
-                String sql = "UPDATE transfer_orders SET status = 'ACKNOWLEDGED' WHERE order_id = ?";
-                try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                    ps.setInt(1, orderId);
-                    ps.executeUpdate();
+                conn.setAutoCommit(false);
+                try {
+                    String sql = "UPDATE transfer_orders SET status = 'ACKNOWLEDGED' WHERE order_id = ?";
+                    try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                        ps.setInt(1, orderId);
+                        ps.executeUpdate();
+                    }
+
+                    // Update corresponding request status to COMPLETED
+                    String sqlReq = "UPDATE transfer_requests SET status = 'COMPLETED' WHERE request_id = (SELECT request_id FROM transfer_orders WHERE order_id = ?)";
+                    try (PreparedStatement psR = conn.prepareStatement(sqlReq)) {
+                        psR.setInt(1, orderId);
+                        psR.executeUpdate();
+                    }
+
+                    // Notify Admin
+                    String notifAdmin = "INSERT INTO notifications (user_id, title, message, notification_type) " +
+                                      "SELECT user_id, 'Transfer Order Acknowledged', 'Officer acknowledged Transfer Order #" + orderId + ". Transfer process completed.', 'INFO' " +
+                                      "FROM users WHERE role = 'CADRE_ADMINISTRATOR'";
+                    try (PreparedStatement psNA = conn.prepareStatement(notifAdmin)) {
+                        psNA.executeUpdate();
+                    } catch (Exception ignore) {}
+
+                    DBConnection.logAudit(conn, userId, role, "ACKNOWLEDGE_ORDER", "transfer_orders", orderId, "Officer acknowledged Transfer Order #" + orderId + ". Request status set to COMPLETED.");
+
+                    conn.commit();
+                    out.print("{\"status\":\"success\",\"message\":\"Transfer order acknowledged successfully\"}");
+                } catch (Exception ex) {
+                    conn.rollback();
+                    throw ex;
+                } finally {
+                    conn.setAutoCommit(true);
                 }
-                out.print("{\"status\":\"success\",\"message\":\"Transfer order acknowledged\"}");
             } else if ("confirm_joining".equals(action)) {
                 String orderIdStr = request.getParameter("order_id");
                 if (orderIdStr == null || orderIdStr.isEmpty()) {
@@ -191,6 +224,8 @@ public class TransferOrderServlet extends HttpServlet {
                     return;
                 }
                 int orderId = Integer.parseInt(orderIdStr);
+                int userId = (Integer) session.getAttribute("user_id");
+                String role = (String) session.getAttribute("role");
 
                 conn.setAutoCommit(false);
                 try {
@@ -222,6 +257,8 @@ public class TransferOrderServlet extends HttpServlet {
                             psOff.executeUpdate();
                         }
                     }
+
+                    DBConnection.logAudit(conn, userId, role, "CONFIRM_JOINING", "transfer_orders", orderId, "Confirmed joining for officer posting at " + newLoc);
 
                     conn.commit();
                     out.print("{\"status\":\"success\",\"message\":\"Joining confirmed successfully\"}");

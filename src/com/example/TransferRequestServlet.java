@@ -154,7 +154,33 @@ public class TransferRequestServlet extends HttpServlet {
 
                 // Initial scoring
                 try {
-                    OptimizationServlet.calculateScore(conn, generatedId);
+                    OptimizationServlet.OptimizationResult res = OptimizationServlet.calculateScore(conn, generatedId);
+                    if (res != null) {
+                        String scoreSql = "UPDATE transfer_requests SET optimization_score = ?, priority = ?, eligibility_status = ? WHERE request_id = ?";
+                        try (PreparedStatement psScore = conn.prepareStatement(scoreSql)) {
+                            psScore.setInt(1, res.totalScore);
+                            psScore.setString(2, res.priority);
+                            psScore.setString(3, res.eligibilityStatus);
+                            psScore.setInt(4, generatedId);
+                            psScore.executeUpdate();
+                        }
+                    }
+                } catch (Exception ignore) {}
+
+                int userId = (Integer) session.getAttribute("user_id");
+                DBConnection.logAudit(conn, userId, (String) session.getAttribute("role"), "SUBMIT_REQUEST", "transfer_requests", generatedId, "Submitted transfer request for " + pref1);
+
+                // Notify Officer
+                String notifUser = "INSERT INTO notifications (user_id, title, message, notification_type) VALUES (?, 'Transfer Request Submitted', 'Your transfer request (#" + generatedId + ") for " + escapeJson(pref1) + " has been submitted successfully.', 'INFO')";
+                try (PreparedStatement psN = conn.prepareStatement(notifUser)) {
+                    psN.setInt(1, userId);
+                    psN.executeUpdate();
+                } catch (Exception ignore) {}
+
+                // Notify Admins
+                String notifAdmin = "INSERT INTO notifications (user_id, title, message, notification_type) SELECT user_id, 'New Transfer Request', 'New transfer request (#" + generatedId + ") submitted by officer.', 'SYSTEM' FROM users WHERE role = 'CADRE_ADMINISTRATOR'";
+                try (PreparedStatement psNA = conn.prepareStatement(notifAdmin)) {
+                    psNA.executeUpdate();
                 } catch (Exception ignore) {}
 
                 out.print("{\"status\":\"success\",\"message\":\"Transfer request submitted successfully\",\"request_id\":" + generatedId + "}");
@@ -173,9 +199,12 @@ public class TransferRequestServlet extends HttpServlet {
                     ps.executeUpdate();
                 }
 
+                int userId = (Integer) session.getAttribute("user_id");
+                DBConnection.logAudit(conn, userId, (String) session.getAttribute("role"), "REJECT".equals(status) ? "REJECT_REQUEST" : "UPDATE_STATUS", "transfer_requests", reqId, "Transfer request #" + reqId + " status updated to " + status);
+
                 // Notify officer
                 String notifSql = "INSERT INTO notifications (user_id, title, message, notification_type) " +
-                                 "SELECT o.user_id, 'Transfer Request Update', 'Your transfer request status has been updated to: " + status + "', 'STATUS_CHANGE' " +
+                                 "SELECT o.user_id, 'Transfer Request Update', 'Your transfer request (#" + reqId + ") status has been updated to: " + status + "', 'STATUS_CHANGE' " +
                                  "FROM transfer_requests tr JOIN officers o ON tr.officer_id = o.officer_id WHERE tr.request_id = ?";
                 try (PreparedStatement psN = conn.prepareStatement(notifSql)) {
                     psN.setInt(1, reqId);

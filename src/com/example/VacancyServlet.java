@@ -118,15 +118,23 @@ public class VacancyServlet extends HttpServlet {
                     ps.setInt(6, pos);
                     ps.executeUpdate();
                 }
+                int userId = (Integer) session.getAttribute("user_id");
+                String role = (String) session.getAttribute("role");
+                DBConnection.logAudit(conn, userId, role, "ADD_VACANCY", "vacancies", null, "Created vacancy at " + loc + " (" + pos + " posts)");
+
                 out.print("{\"status\":\"success\",\"message\":\"Vacancy added successfully\"}");
             } else if ("delete".equals(action)) {
                 String vacIdStr = request.getParameter("vacancy_id");
                 if (vacIdStr != null && !vacIdStr.isEmpty()) {
+                    int vacId = Integer.parseInt(vacIdStr);
                     String sql = "DELETE FROM vacancies WHERE vacancy_id = ?";
                     try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                        ps.setInt(1, Integer.parseInt(vacIdStr));
+                        ps.setInt(1, vacId);
                         ps.executeUpdate();
                     }
+                    int userId = (Integer) session.getAttribute("user_id");
+                    String role = (String) session.getAttribute("role");
+                    DBConnection.logAudit(conn, userId, role, "DELETE_VACANCY", "vacancies", vacId, "Removed vacancy #" + vacId);
                 }
                 out.print("{\"status\":\"success\",\"message\":\"Vacancy removed\"}");
             }

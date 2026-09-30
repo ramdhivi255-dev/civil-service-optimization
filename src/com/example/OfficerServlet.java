@@ -153,6 +153,9 @@ public class OfficerServlet extends HttpServlet {
                         psOff.setInt(11, yrs != null && !yrs.isEmpty() ? Integer.parseInt(yrs) : 0);
                         psOff.executeUpdate();
                     }
+
+                    DBConnection.logAudit(conn, (Integer) session.getAttribute("user_id"), (String) session.getAttribute("role"), "ADD_OFFICER", "officers", newUserId, "Registered new officer: " + name + " (" + empId + ")");
+
                     conn.commit();
                     out.print("{\"status\":\"success\",\"message\":\"Officer added successfully\"}");
                 } catch (Exception ex) {
@@ -169,16 +172,25 @@ public class OfficerServlet extends HttpServlet {
                 String district = request.getParameter("current_district");
                 String yrs = request.getParameter("years_in_current_posting");
 
-                String sql = "UPDATE officers SET phone = ?, email = ?, current_posting = ?, current_district = ?, years_in_current_posting = ? WHERE user_id = ?";
-                try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                    ps.setString(1, phone);
-                    ps.setString(2, email);
-                    ps.setString(3, posting);
-                    ps.setString(4, district);
-                    ps.setInt(5, yrs != null && !yrs.isEmpty() ? Integer.parseInt(yrs) : 0);
-                    ps.setInt(6, userId);
+                StringBuilder sql = new StringBuilder("UPDATE officers SET email = COALESCE(NULLIF(?, ''), email), phone = COALESCE(NULLIF(?, ''), phone)");
+                if (posting != null && !posting.trim().isEmpty()) sql.append(", current_posting = ?");
+                if (district != null && !district.trim().isEmpty()) sql.append(", current_district = ?");
+                if (yrs != null && !yrs.trim().isEmpty()) sql.append(", years_in_current_posting = ?");
+                sql.append(" WHERE user_id = ?");
+
+                try (PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+                    int idx = 1;
+                    ps.setString(idx++, email != null ? email.trim() : "");
+                    ps.setString(idx++, phone != null ? phone.trim() : "");
+                    if (posting != null && !posting.trim().isEmpty()) ps.setString(idx++, posting.trim());
+                    if (district != null && !district.trim().isEmpty()) ps.setString(idx++, district.trim());
+                    if (yrs != null && !yrs.trim().isEmpty()) ps.setInt(idx++, Integer.parseInt(yrs.trim()));
+                    ps.setInt(idx++, userId);
                     ps.executeUpdate();
                 }
+
+                DBConnection.logAudit(conn, userId, (String) session.getAttribute("role"), "UPDATE_PROFILE", "officers", userId, "Officer updated profile contact particulars");
+
                 out.print("{\"status\":\"success\",\"message\":\"Profile updated successfully\"}");
             }
         } catch (Exception e) {

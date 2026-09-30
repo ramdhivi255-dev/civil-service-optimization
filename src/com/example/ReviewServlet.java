@@ -123,6 +123,16 @@ public class ReviewServlet extends HttpServlet {
                     psN.executeUpdate();
                 }
 
+                // Notify Admin
+                String notifAdmin = "INSERT INTO notifications (user_id, title, message, notification_type) " +
+                                  "SELECT user_id, 'Committee Review Completed', 'Request #" + reqId + " has been " + finalStatus + " by Transfer Committee.', 'INFO' " +
+                                  "FROM users WHERE role = 'CADRE_ADMINISTRATOR'";
+                try (PreparedStatement psNA = conn.prepareStatement(notifAdmin)) {
+                    psNA.executeUpdate();
+                } catch (Exception ignore) {}
+
+                DBConnection.logAudit(conn, reviewerId, (String) session.getAttribute("role"), "COMMITTEE_REVIEW_DECISION", "transfer_requests", reqId, "Committee submitted decision (" + finalStatus + ") for Request #" + reqId);
+
                 conn.commit();
                 out.print("{\"status\":\"success\",\"message\":\"Committee decision submitted successfully\"}");
             } catch (Exception ex) {

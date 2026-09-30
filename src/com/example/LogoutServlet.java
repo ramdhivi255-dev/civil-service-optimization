@@ -21,6 +21,12 @@ public class LogoutServlet extends HttpServlet {
             throws ServletException, IOException {
         HttpSession session = request.getSession(false);
         if (session != null) {
+            Integer userId = (Integer) session.getAttribute("user_id");
+            String username = (String) session.getAttribute("username");
+            String role = (String) session.getAttribute("role");
+            if (userId != null) {
+                DBConnection.logAudit(null, userId, role, "LOGOUT", "users", userId, "User logged out: " + (username != null ? username : "User"));
+            }
             session.invalidate();
         }
         response.setContentType("application/json");

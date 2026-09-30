@@ -19,10 +19,12 @@ public class OptimizationServlet extends HttpServlet {
         public int totalScore;
         public String priority;
         public String eligibilityStatus;
-        public int tenureScore;
-        public int vacancyScore;
-        public int reasonScore;
-        public int preferenceScore;
+        public int eligibilityScore; // Max 25
+        public int tenureScore;      // Max 20
+        public int preferenceScore;  // Max 20
+        public int vacancyScore;     // Max 15
+        public int reasonScore;      // Max 10 (Admin Priority)
+        public int historyScore;     // Max 10 (Transfer History / Stability)
     }
 
     @Override
@@ -47,6 +49,8 @@ public class OptimizationServlet extends HttpServlet {
         }
 
         int requestId = Integer.parseInt(reqIdStr);
+        int userId = (Integer) session.getAttribute("user_id");
+        String role = (String) session.getAttribute("role");
 
         try (Connection conn = DBConnection.getConnection()) {
             if ("verify_and_score".equals(action)) {
@@ -62,15 +66,19 @@ public class OptimizationServlet extends HttpServlet {
                         ps.executeUpdate();
                     }
 
+                    DBConnection.logAudit(conn, userId, role, "VERIFY_AND_SCORE", "transfer_requests", requestId, "Calculated optimization score (" + res.totalScore + "/100) and priority (" + res.priority + ") for Request #" + requestId);
+
                     out.print("{\"status\":\"success\",\"result\":{" +
                             "\"total_score\":" + res.totalScore + "," +
                             "\"priority\":\"" + res.priority + "\"," +
                             "\"eligibility_status\":\"" + res.eligibilityStatus + "\"," +
                             "\"breakdown\":{" +
+                            "\"eligibility_score\":" + res.eligibilityScore + "," +
                             "\"tenure_score\":" + res.tenureScore + "," +
+                            "\"preference_score\":" + res.preferenceScore + "," +
                             "\"vacancy_score\":" + res.vacancyScore + "," +
                             "\"reason_score\":" + res.reasonScore + "," +
-                            "\"preference_score\":" + res.preferenceScore +
+                            "\"history_score\":" + res.historyScore +
                             "}" +
                             "}}");
                 } else {
@@ -83,9 +91,11 @@ public class OptimizationServlet extends HttpServlet {
                     ps.executeUpdate();
                 }
 
-                // Send notification to committee
+                DBConnection.logAudit(conn, userId, role, "FORWARD_TO_COMMITTEE", "transfer_requests", requestId, "Forwarded Request #" + requestId + " to Transfer Committee for review");
+
+                // Send notification to committee members
                 String notifSql = "INSERT INTO notifications (user_id, title, message, notification_type) " +
-                                 "SELECT user_id, 'New Transfer Request for Review', 'Request #' || ? || ' is awaiting committee review.', 'SYSTEM' " +
+                                 "SELECT user_id, 'New Transfer Request for Review', CONCAT('Request #', ?, ' is awaiting committee review.'), 'SYSTEM' " +
                                  "FROM users WHERE role = 'TRANSFER_COMMITTEE_MEMBER'";
                 try (PreparedStatement psNotif = conn.prepareStatement(notifSql)) {
                     psNotif.setInt(1, requestId);
@@ -111,21 +121,34 @@ public class OptimizationServlet extends HttpServlet {
                     OptimizationResult result = new OptimizationResult();
                     int years = rs.getInt("years_in_current_posting");
                     String pref1 = rs.getString("preferred_location_1");
+                    String pref2 = rs.getString("preferred_location_2");
                     String reason = rs.getString("reason");
 
-                    // 1. Tenure Score (0 to 35)
-                    if (years >= 5) result.tenureScore = 35;
-                    else if (years == 4) result.tenureScore = 30;
-                    else if (years == 3) result.tenureScore = 25;
-                    else if (years == 2) result.tenureScore = 15;
-                    else result.tenureScore = 5;
+                    // 1. Core Eligibility Baseline (25 pts)
+                    result.eligibilityScore = 25;
 
-                    // 2. Vacancy Score (0 to 30) based on availability in preferred location
+                    // 2. Years in Current Posting (20 pts)
+                    if (years >= 5) result.tenureScore = 20;
+                    else if (years == 4) result.tenureScore = 16;
+                    else if (years == 3) result.tenureScore = 12;
+                    else if (years == 2) result.tenureScore = 8;
+                    else result.tenureScore = 4;
+
+                    // 3. Officer Preference Match (20 pts)
+                    if (pref1 != null && !pref1.trim().isEmpty()) {
+                        result.preferenceScore = 20;
+                    } else if (pref2 != null && !pref2.trim().isEmpty()) {
+                        result.preferenceScore = 15;
+                    } else {
+                        result.preferenceScore = 10;
+                    }
+
+                    // 4. Vacancy Availability Score (15 pts)
                     int availableVacancies = 0;
                     if (pref1 != null && !pref1.isEmpty()) {
-                        String vacSql = "SELECT SUM(available_positions) FROM vacancies WHERE (location LIKE ? OR district LIKE ?) AND status = 'AVAILABLE'";
+                        String vacSql = "SELECT COALESCE(SUM(available_positions), 0) FROM vacancies WHERE (location LIKE ? OR district LIKE ?) AND status = 'AVAILABLE'";
                         try (PreparedStatement psV = conn.prepareStatement(vacSql)) {
-                            String pat = "%" + pref1 + "%";
+                            String pat = "%" + pref1.trim() + "%";
                             psV.setString(1, pat);
                             psV.setString(2, pat);
                             try (ResultSet rsV = psV.executeQuery()) {
@@ -133,26 +156,30 @@ public class OptimizationServlet extends HttpServlet {
                             }
                         }
                     }
-                    if (availableVacancies >= 3) result.vacancyScore = 30;
-                    else if (availableVacancies == 2) result.vacancyScore = 24;
-                    else if (availableVacancies == 1) result.vacancyScore = 18;
-                    else result.vacancyScore = 5;
+                    if (availableVacancies >= 3) result.vacancyScore = 15;
+                    else if (availableVacancies == 2) result.vacancyScore = 12;
+                    else if (availableVacancies == 1) result.vacancyScore = 9;
+                    else result.vacancyScore = 3;
 
-                    // 3. Reason Priority Score (0 to 20)
+                    // 5. Administrative Priority / Reason Score (10 pts)
                     String lReason = reason != null ? reason.toLowerCase() : "";
                     if (lReason.contains("medical") || lReason.contains("health") || lReason.contains("spouse")) {
-                        result.reasonScore = 20;
-                    } else if (lReason.contains("family") || lReason.contains("education") || lReason.contains("children")) {
-                        result.reasonScore = 15;
-                    } else {
                         result.reasonScore = 10;
+                    } else if (lReason.contains("family") || lReason.contains("education") || lReason.contains("children")) {
+                        result.reasonScore = 7;
+                    } else {
+                        result.reasonScore = 5;
                     }
 
-                    // 4. Preference Score (0 to 15)
-                    result.preferenceScore = 15;
+                    // 6. Transfer History / Stability Score (10 pts)
+                    if (years >= 3) {
+                        result.historyScore = 10;
+                    } else {
+                        result.historyScore = 5;
+                    }
 
                     // Total Calculation (0 - 100)
-                    result.totalScore = Math.min(100, result.tenureScore + result.vacancyScore + result.reasonScore + result.preferenceScore);
+                    result.totalScore = Math.min(100, result.eligibilityScore + result.tenureScore + result.preferenceScore + result.vacancyScore + result.reasonScore + result.historyScore);
 
                     if (result.totalScore >= 75) {
                         result.priority = "HIGH";

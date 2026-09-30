@@ -90,6 +90,8 @@ public class LoginServlet extends HttpServlet {
                                 session.setAttribute("officer_id", officerId);
                             }
 
+                            DBConnection.logAudit(conn, userId, role, "LOGIN", "users", userId, "User logged in: " + username);
+
                             String redirect = "officer/dashboard.html";
                             if ("CADRE_ADMINISTRATOR".equals(role)) {
                                 redirect = "admin/dashboard.html";

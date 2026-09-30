@@ -88,6 +88,10 @@ public class PolicyServlet extends HttpServlet {
                     ps.setString(5, rules);
                     ps.executeUpdate();
                 }
+                int userId = (Integer) session.getAttribute("user_id");
+                String role = (String) session.getAttribute("role");
+                DBConnection.logAudit(conn, userId, role, "ADD_POLICY", "transfer_policies", null, "Created transfer policy: " + name);
+
                 out.print("{\"status\":\"success\",\"message\":\"Policy created successfully\"}");
             }
         } catch (Exception e) {
