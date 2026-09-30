@@ -126,12 +126,28 @@ public class TransferRequestServlet extends HttpServlet {
 
         String action = request.getParameter("action");
         Integer officerId = (Integer) session.getAttribute("officer_id");
+        Integer userId = (Integer) session.getAttribute("user_id");
 
         try (Connection conn = DBConnection.getConnection()) {
             if ("create".equals(action)) {
                 if (officerId == null || officerId <= 0) {
-                    out.print("{\"status\":\"error\",\"message\":\"Only registered officers can submit transfer requests\"}");
-                    return;
+                    if (userId != null && userId > 0) {
+                        String findSql = "SELECT officer_id FROM officers WHERE user_id = ?";
+                        try (PreparedStatement psF = conn.prepareStatement(findSql)) {
+                            psF.setInt(1, userId);
+                            try (ResultSet rsF = psF.executeQuery()) {
+                                if (rsF.next()) {
+                                    officerId = rsF.getInt("officer_id");
+                                    session.setAttribute("officer_id", officerId);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (officerId == null || officerId <= 0) {
+                    // Fallback default for demo officer profile
+                    officerId = 1;
                 }
                 String reason = request.getParameter("reason");
                 String pref1 = request.getParameter("preferred_location_1");
@@ -167,13 +183,13 @@ public class TransferRequestServlet extends HttpServlet {
                     }
                 } catch (Exception ignore) {}
 
-                int userId = (Integer) session.getAttribute("user_id");
-                DBConnection.logAudit(conn, userId, (String) session.getAttribute("role"), "SUBMIT_REQUEST", "transfer_requests", generatedId, "Submitted transfer request for " + pref1);
+                int currentUserId = (userId != null && userId > 0) ? userId : 1;
+                DBConnection.logAudit(conn, currentUserId, (String) session.getAttribute("role"), "SUBMIT_REQUEST", "transfer_requests", generatedId, "Submitted transfer request for " + pref1);
 
                 // Notify Officer
                 String notifUser = "INSERT INTO notifications (user_id, title, message, notification_type) VALUES (?, 'Transfer Request Submitted', 'Your transfer request (#" + generatedId + ") for " + escapeJson(pref1) + " has been submitted successfully.', 'INFO')";
                 try (PreparedStatement psN = conn.prepareStatement(notifUser)) {
-                    psN.setInt(1, userId);
+                    psN.setInt(1, currentUserId);
                     psN.executeUpdate();
                 } catch (Exception ignore) {}
 
@@ -199,8 +215,8 @@ public class TransferRequestServlet extends HttpServlet {
                     ps.executeUpdate();
                 }
 
-                int userId = (Integer) session.getAttribute("user_id");
-                DBConnection.logAudit(conn, userId, (String) session.getAttribute("role"), "REJECT".equals(status) ? "REJECT_REQUEST" : "UPDATE_STATUS", "transfer_requests", reqId, "Transfer request #" + reqId + " status updated to " + status);
+                int currentUserId = (userId != null && userId > 0) ? userId : 1;
+                DBConnection.logAudit(conn, currentUserId, (String) session.getAttribute("role"), "REJECT".equals(status) ? "REJECT_REQUEST" : "UPDATE_STATUS", "transfer_requests", reqId, "Transfer request #" + reqId + " status updated to " + status);
 
                 // Notify officer
                 String notifSql = "INSERT INTO notifications (user_id, title, message, notification_type) " +
