@@ -95,7 +95,7 @@ public class OptimizationServlet extends HttpServlet {
 
                 // Send notification to committee members
                 String notifSql = "INSERT INTO notifications (user_id, title, message, notification_type) " +
-                                 "SELECT user_id, 'New Transfer Request for Review', CONCAT('Request #', ?, ' is awaiting committee review.'), 'SYSTEM' " +
+                                 "SELECT user_id, 'New Transfer Request for Review', 'Request #' || ? || ' is awaiting committee review.', 'SYSTEM' " +
                                  "FROM users WHERE role = 'TRANSFER_COMMITTEE_MEMBER'";
                 try (PreparedStatement psNotif = conn.prepareStatement(notifSql)) {
                     psNotif.setInt(1, requestId);
