@@ -44,33 +44,32 @@ async function initSession(allowedRoles = []) {
         updateNavUserInfo(data);
         return data;
     } catch (err) {
-        console.warn('Backend servlet unavailable, using session state:', err);
+        console.warn('Backend servlet unavailable, checking local session state:', err);
         const savedUser = sessionStorage.getItem('currentUser');
         if (savedUser) {
             try {
                 currentUser = JSON.parse(savedUser);
+                if (allowedRoles.length > 0 && !allowedRoles.includes(currentUser.role)) {
+                    document.body.innerHTML = `
+                        <div style="height: 100vh; display: flex; align-items: center; justify-content: center; background: #f8fafc; font-family: sans-serif;">
+                            <div style="text-align: center; background: white; padding: 3rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 450px;">
+                                <div style="font-size: 3rem; color: #dc2626; margin-bottom: 1rem;">⚠️</div>
+                                <h1 style="color: #0f172a; margin-bottom: 0.5rem; font-size: 1.8rem;">Access Denied</h1>
+                                <p style="color: #64748b; margin-bottom: 1.5rem;">You do not have administrative permission to access this page.</p>
+                                <a href="${getHomeRedirect(currentUser.role)}" style="display: inline-block; background: #2563eb; color: white; padding: 0.75rem 1.5rem; text-decoration: none; border-radius: 6px; font-weight: 600;">Return to Dashboard</a>
+                            </div>
+                        </div>
+                    `;
+                    return null;
+                }
                 updateNavUserInfo(currentUser);
                 return currentUser;
             } catch (e) {}
         }
-        
-        // Auto-detect role from path for seamless static preview
-        const isPageAdmin = window.location.pathname.includes('/admin/');
-        const isPageCommittee = window.location.pathname.includes('/committee/');
-        const demoRole = isPageAdmin ? 'CADRE_ADMINISTRATOR' : (isPageCommittee ? 'TRANSFER_COMMITTEE_MEMBER' : 'CIVIL_SERVICE_OFFICER');
-        const demoName = isPageAdmin ? 'Admin User' : (isPageCommittee ? 'Committee Member' : 'Officer Rajan');
-        const demoUsername = isPageAdmin ? 'admin' : (isPageCommittee ? 'committee1' : 'officer1');
 
-        currentUser = {
-            status: 'authenticated',
-            user_id: 1,
-            username: demoUsername,
-            role: demoRole,
-            name: demoName,
-            officer_id: 101
-        };
-        updateNavUserInfo(currentUser);
-        return currentUser;
+        // Unauthenticated -> redirect to login page
+        window.location.href = (API_BASE.includes('../') ? '../' : '') + 'login.html';
+        return null;
     }
 }
 
@@ -98,8 +97,9 @@ function formatRole(role) {
 
 // Global Logout Action
 async function handleLogout() {
+    sessionStorage.removeItem('currentUser');
     try {
-        const response = await fetch(API_BASE + 'logout', { method: 'POST' });
+        await fetch(API_BASE + 'logout', { method: 'POST' });
         window.location.href = (API_BASE.includes('../') ? '../' : '') + 'login.html';
     } catch (err) {
         window.location.href = (API_BASE.includes('../') ? '../' : '') + 'login.html';
