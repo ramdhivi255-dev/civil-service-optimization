@@ -85,9 +85,9 @@ The application automatically reads database credentials from environment variab
 
 | Role | Username | Password |
 | :--- | :--- | :--- |
-| **Cadre Administrator** | `admin` | `admin123` |
-| **Civil Services Officer** | `officer1` | `officer123` |
-| **Transfer Committee Member** | `committee1` | `committee123` |
+| **Cadre Administrator** | `admin` | `Admin@CS2026!` |
+| **Civil Services Officer** | `officer1` | `Officer@CS2026!` |
+| **Transfer Committee Member** | `committee1` | `Committee@CS2026!` |
 
 ---
 

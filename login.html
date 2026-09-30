@@ -106,20 +106,20 @@
                         <tr>
                             <td>Admin</td>
                             <td>admin</td>
-                            <td>admin123</td>
-                            <td><button class="quick-fill-btn" onclick="fillLogin('admin', 'admin123')">Fill</button></td>
+                            <td>Admin@CS2026!</td>
+                            <td><button class="quick-fill-btn" onclick="fillLogin('admin', 'Admin@CS2026!')">Fill</button></td>
                         </tr>
                         <tr>
                             <td>Officer</td>
                             <td>officer1</td>
-                            <td>officer123</td>
-                            <td><button class="quick-fill-btn" onclick="fillLogin('officer1', 'officer123')">Fill</button></td>
+                            <td>Officer@CS2026!</td>
+                            <td><button class="quick-fill-btn" onclick="fillLogin('officer1', 'Officer@CS2026!')">Fill</button></td>
                         </tr>
                         <tr>
                             <td>Committee</td>
                             <td>committee1</td>
-                            <td>committee123</td>
-                            <td><button class="quick-fill-btn" onclick="fillLogin('committee1', 'committee123')">Fill</button></td>
+                            <td>Committee@CS2026!</td>
+                            <td><button class="quick-fill-btn" onclick="fillLogin('committee1', 'Committee@CS2026!')">Fill</button></td>
                         </tr>
                     </tbody>
                 </table>
@@ -157,6 +157,22 @@
         function fillLogin(u, p) {
             document.getElementById('username').value = u;
             document.getElementById('password').value = p;
+        }
+
+        function validateDemoAuth(username, password) {
+            const uLower = (username || '').trim().toLowerCase();
+            const p = (password || '').trim();
+
+            if (uLower === 'admin' && p === 'Admin@CS2026!') {
+                return { valid: true, redirect: 'admin/dashboard.html', role: 'CADRE_ADMINISTRATOR', name: 'Admin User' };
+            }
+            if (uLower.startsWith('officer') && p === 'Officer@CS2026!') {
+                return { valid: true, redirect: 'officer/dashboard.html', role: 'CIVIL_SERVICE_OFFICER', name: username || 'Officer Rajan' };
+            }
+            if (uLower.startsWith('committee') && p === 'Committee@CS2026!') {
+                return { valid: true, redirect: 'committee/dashboard.html', role: 'TRANSFER_COMMITTEE_MEMBER', name: 'Committee Member' };
+            }
+            return { valid: false };
         }
 
         async function submitLogin(e) {
@@ -197,76 +213,44 @@
                     }, 500);
                 } else {
                     if (data.message && data.message.toLowerCase().includes('database error')) {
-                        let redirectUrl = 'officer/dashboard.html';
-                        let userRole = 'CIVIL_SERVICE_OFFICER';
-                        let userName = username || 'Officer Rajan';
-
-                        const uLower = username.toLowerCase();
-                        if (uLower.includes('admin')) {
-                            redirectUrl = 'admin/dashboard.html';
-                            userRole = 'CADRE_ADMINISTRATOR';
-                            userName = 'Admin User';
-                        } else if (uLower.includes('committee')) {
-                            redirectUrl = 'committee/dashboard.html';
-                            userRole = 'TRANSFER_COMMITTEE_MEMBER';
-                            userName = 'Committee Member';
-                        } else {
-                            redirectUrl = 'officer/dashboard.html';
-                            userRole = 'CIVIL_SERVICE_OFFICER';
-                            userName = username || 'Officer Rajan';
+                        const auth = validateDemoAuth(username, password);
+                        if (auth.valid) {
+                            sessionStorage.setItem('currentUser', JSON.stringify({
+                                status: 'authenticated',
+                                user_id: 1,
+                                username: username,
+                                role: auth.role,
+                                name: auth.name,
+                                officer_id: 101
+                            }));
+                            alertDiv.innerHTML = `<div class="alert alert-success">Login successful! Redirecting...</div>`;
+                            setTimeout(() => {
+                                window.location.href = auth.redirect;
+                            }, 500);
+                            return;
                         }
-
-                        sessionStorage.setItem('currentUser', JSON.stringify({
-                            status: 'authenticated',
-                            user_id: 1,
-                            username: username,
-                            role: userRole,
-                            name: userName,
-                            officer_id: 101
-                        }));
-
-                        alertDiv.innerHTML = `<div class="alert alert-success">Login successful! Redirecting...</div>`;
-                        setTimeout(() => {
-                            window.location.href = redirectUrl;
-                        }, 500);
-                        return;
                     }
                     alertDiv.innerHTML = `<div class="alert alert-error">${data.message || 'Invalid username or password'}</div>`;
                 }
             } catch (err) {
-                // Static Server (Live Server) / Offline Tomcat Fallback: authenticate demo roles gracefully
-                let redirectUrl = 'officer/dashboard.html';
-                let userRole = 'CIVIL_SERVICE_OFFICER';
-                let userName = username || 'Officer Rajan';
-
-                const uLower = username.toLowerCase();
-                if (uLower.includes('admin')) {
-                    redirectUrl = 'admin/dashboard.html';
-                    userRole = 'CADRE_ADMINISTRATOR';
-                    userName = 'Admin User';
-                } else if (uLower.includes('committee')) {
-                    redirectUrl = 'committee/dashboard.html';
-                    userRole = 'TRANSFER_COMMITTEE_MEMBER';
-                    userName = 'Committee Member';
+                // Static Host / Offline Tomcat Fallback: validate demo credentials strictly
+                const auth = validateDemoAuth(username, password);
+                if (auth.valid) {
+                    sessionStorage.setItem('currentUser', JSON.stringify({
+                        status: 'authenticated',
+                        user_id: 1,
+                        username: username,
+                        role: auth.role,
+                        name: auth.name,
+                        officer_id: 101
+                    }));
+                    alertDiv.innerHTML = `<div class="alert alert-success">Login successful! Redirecting...</div>`;
+                    setTimeout(() => {
+                        window.location.href = auth.redirect;
+                    }, 500);
                 } else {
-                    redirectUrl = 'officer/dashboard.html';
-                    userRole = 'CIVIL_SERVICE_OFFICER';
-                    userName = username || 'Officer Rajan';
+                    alertDiv.innerHTML = `<div class="alert alert-error">Invalid username or password</div>`;
                 }
-
-                sessionStorage.setItem('currentUser', JSON.stringify({
-                    status: 'authenticated',
-                    user_id: 1,
-                    username: username,
-                    role: userRole,
-                    name: userName,
-                    officer_id: 101
-                }));
-
-                alertDiv.innerHTML = `<div class="alert alert-success">Login successful! Redirecting...</div>`;
-                setTimeout(() => {
-                    window.location.href = redirectUrl;
-                }, 500);
             }
         }
     </script>

@@ -72,7 +72,10 @@ public class LoginServlet extends HttpServlet {
                 try (ResultSet rs = pstmt.executeQuery()) {
                     if (rs.next()) {
                         String dbPassword = rs.getString("password");
-                        if (dbPassword.equals(password.trim())) {
+                        String inputPassword = password.trim();
+                        String hashedInput = hashSHA256(inputPassword);
+
+                        if (dbPassword.equals(inputPassword) || dbPassword.equalsIgnoreCase(hashedInput)) {
                             int userId = rs.getInt("user_id");
                             String role = rs.getString("role");
                             String name = rs.getString("name");
@@ -106,9 +109,9 @@ public class LoginServlet extends HttpServlet {
             String uTrim = username.trim().toLowerCase();
             String pTrim = password.trim();
 
-            if (("admin".equals(uTrim) && "admin123".equals(pTrim)) ||
-                ("officer1".equals(uTrim) && "officer123".equals(pTrim)) ||
-                ("committee1".equals(uTrim) && "committee123".equals(pTrim))) {
+            if (("admin".equals(uTrim) && "Admin@CS2026!".equals(pTrim)) ||
+                ("officer1".equals(uTrim) && "Officer@CS2026!".equals(pTrim)) ||
+                ("committee1".equals(uTrim) && "Committee@CS2026!".equals(pTrim))) {
 
                 int userId = 1;
                 String role = "CIVIL_SERVICE_OFFICER";
@@ -140,6 +143,23 @@ public class LoginServlet extends HttpServlet {
             out.print("{\"status\":\"error\",\"message\":\"Database error: " + escapeJson(e.getMessage()) + "\"}");
         }
         out.flush();
+    }
+
+    public static String hashSHA256(String input) {
+        if (input == null) return "";
+        try {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] hash = md.digest(input.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (Exception e) {
+            return input;
+        }
     }
 
     private String escapeJson(String input) {

@@ -129,7 +129,7 @@ public class OfficerServlet extends HttpServlet {
                     int newUserId = 0;
                     try (PreparedStatement psUser = conn.prepareStatement(userSql, Statement.RETURN_GENERATED_KEYS)) {
                         psUser.setString(1, username);
-                        psUser.setString(2, password);
+                        psUser.setString(2, LoginServlet.hashSHA256(password));
                         psUser.setString(3, name);
                         psUser.setString(4, email);
                         psUser.executeUpdate();
